@@ -1,0 +1,804 @@
+<!-- ResolvIA — Prototype Lidl IT / UTT Innovation Crunch Time -->
+<div id="app-root">
+<div class="phone">
+  <!-- ===================== TOP BAR ===================== -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><span>L</span></div>
+      <div class="brand-text">
+        <strong>ResolvIA</strong>
+        <em id="role-label">Espace employé</em>
+      </div>
+    </div>
+    <div class="net-pill" id="net-pill" title="Connexion IA">
+      <span class="dot"></span><span id="net-text">IA</span>
+    </div>
+  </header>
+
+  <!-- ===================== VIEWS ===================== -->
+  <main id="screen">
+
+    <!-- ---------- EMPLOYEE ---------- -->
+    <section class="view" data-view="employee">
+      <div class="hero">
+        <div class="hero-eyebrow">Un souci en magasin&nbsp;?</div>
+        <h1>Signalez-le<br>en 10&nbsp;secondes.</h1>
+        <p>Décrivez le problème comme vous le diriez à un collègue. L'IA s'occupe du reste.</p>
+      </div>
+
+      <div class="quick-grid" id="quick-grid"></div>
+
+      <div class="composer">
+        <label class="composer-label">Que se passe-t-il&nbsp;?</label>
+        <textarea id="desc" rows="3" placeholder="Ex : La caisse 3 ne scanne plus les articles depuis 5 min, la file s'allonge…"></textarea>
+        <div class="composer-meta">
+          <div class="loc">
+            <svg viewBox="0 0 24 24" class="ic"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <select id="store-loc">
+              <option>Magasin Troyes Centre — Caisses</option>
+              <option>Magasin Troyes Centre — Rayon frais</option>
+              <option>Magasin Troyes Centre — Back-office</option>
+              <option>Magasin Troyes Centre — Réserve</option>
+            </select>
+          </div>
+          <button class="btn-analyze" id="btn-analyze">
+            <span class="ba-text">Analyser avec l'IA</span>
+            <svg viewBox="0 0 24 24" class="ic"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="ai-result" class="ai-result hidden"></div>
+
+      <div class="recent-block">
+        <div class="block-head"><span>Vos derniers signalements</span></div>
+        <div id="my-tickets" class="my-tickets"></div>
+      </div>
+    </section>
+
+    <!-- ---------- TECHNICIAN ---------- -->
+    <section class="view hidden" data-view="tech">
+      <div class="tech-head">
+        <div>
+          <h2>File support N1/N2</h2>
+          <p id="tech-sub">Triée par criticité IA</p>
+        </div>
+        <div class="seg" id="tech-filter">
+          <button class="seg-btn active" data-f="open">Ouverts</button>
+          <button class="seg-btn" data-f="all">Tous</button>
+          <button class="seg-btn" data-f="resolved">Résolus</button>
+        </div>
+      </div>
+      <div id="tech-list" class="tech-list"></div>
+    </section>
+
+    <!-- ---------- DASHBOARD ---------- -->
+    <section class="view hidden" data-view="dash">
+      <div class="dash-head">
+        <h2>Pilotage IA</h2>
+        <p>Anticiper · Prédire · Réduire l'interruption</p>
+      </div>
+
+      <div class="kpi-grid" id="kpi-grid"></div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <span>Volume d'incidents par équipement</span>
+        </div>
+        <div id="bars" class="bars"></div>
+      </div>
+
+      <div class="panel predict">
+        <div class="panel-head">
+          <span>Prédiction de pannes &amp; recommandations</span>
+          <button class="btn-mini" id="btn-predict">Analyser</button>
+        </div>
+        <div id="predict-body" class="predict-body">
+          <p class="muted">L'IA croise la récurrence des incidents, les résolutions passées et les événements connexes (mises à jour, etc.) pour anticiper les prochaines pannes.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== BOTTOM NAV ===================== -->
+  <nav class="tabbar">
+    <button class="tab active" data-go="employee">
+      <svg viewBox="0 0 24 24" class="ic"><path d="M4 19V9l8-5 8 5v10"/><path d="M9 19v-6h6v6"/></svg>
+      <span>Signaler</span>
+    </button>
+    <button class="tab" data-go="tech">
+      <svg viewBox="0 0 24 24" class="ic"><path d="m14 7 3 3"/><path d="M5 19 16 8l-3-3L2 16v3h3Z"/><path d="m18 6 1.5-1.5a2 2 0 0 0-3-3L15 3"/></svg>
+      <span>Support</span>
+      <em class="badge" id="tab-badge-tech"></em>
+    </button>
+    <button class="tab" data-go="dash">
+      <svg viewBox="0 0 24 24" class="ic"><path d="M4 19V5"/><path d="M4 19h16"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg>
+      <span>Pilotage IA</span>
+    </button>
+  </nav>
+</div>
+
+<div id="toast" class="toast"></div>
+</div>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+
+#app-root *{box-sizing:border-box;margin:0;padding:0}
+#app-root{
+  --blue:#0050aa; --blue-d:#003c80; --blue-l:#e8f0fb;
+  --yellow:#ffe500; --red:#e3000f; --red-l:#fdeaeb;
+  --ink:#0c1a2b; --ink-2:#5a6b7d; --line:#e3e8ef;
+  --bg:#f4f6fa; --card:#ffffff; --ok:#0a8f5b; --ok-l:#e6f5ee;
+  --amber:#c77700; --amber-l:#fdf1de;
+  --r:16px; --shadow:0 1px 2px rgba(12,26,43,.06),0 8px 24px rgba(12,26,43,.07);
+  font-family:'Hanken Grotesk',sans-serif; color:var(--ink);
+  -webkit-font-smoothing:antialiased; line-height:1.45;
+  display:flex; justify-content:center; align-items:flex-start;
+  background:
+    radial-gradient(900px 500px at 80% -10%, #dbe7fb 0%, transparent 60%),
+    radial-gradient(700px 500px at -10% 110%, #fff7c2 0%, transparent 55%),
+    var(--bg);
+  min-height:100vh; padding:18px 12px 28px;
+}
+#app-root .phone{
+  width:100%; max-width:440px; background:var(--bg);
+  border-radius:30px; overflow:hidden; position:relative;
+  box-shadow:0 30px 80px -20px rgba(12,26,43,.30);
+  display:flex; flex-direction:column; min-height:760px;
+  border:1px solid rgba(255,255,255,.6);
+}
+
+/* ---- topbar ---- */
+.topbar{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 18px 14px; background:var(--card);
+  border-bottom:1px solid var(--line); position:sticky; top:0; z-index:20;
+}
+.brand{display:flex; align-items:center; gap:11px}
+.brand-mark{
+  width:40px; height:40px; border-radius:11px;
+  background:linear-gradient(135deg,var(--blue),var(--blue-d));
+  display:grid; place-items:center; position:relative;
+  box-shadow:0 6px 14px -4px rgba(0,80,170,.55);
+}
+.brand-mark::after{content:"";position:absolute;inset:0;border-radius:11px;
+  border:1.5px solid var(--yellow);opacity:.5}
+.brand-mark span{font-family:'Archivo';font-weight:900;color:#fff;font-size:20px}
+.brand-text{display:flex;flex-direction:column;line-height:1.1}
+.brand-text strong{font-family:'Archivo';font-weight:800;font-size:18px;letter-spacing:-.02em}
+.brand-text em{font-style:normal;font-size:11.5px;color:var(--ink-2);font-weight:500}
+.net-pill{
+  display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+  background:var(--ok-l);color:var(--ok);padding:6px 10px;border-radius:999px;
+}
+.net-pill.off{background:var(--amber-l);color:var(--amber)}
+.net-pill .dot{width:7px;height:7px;border-radius:50%;background:currentColor;
+  box-shadow:0 0 0 0 currentColor;animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(10,143,91,.5)}70%{box-shadow:0 0 0 7px rgba(10,143,91,0)}100%{box-shadow:0 0 0 0 rgba(10,143,91,0)}}
+
+main#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:90px}
+.view{padding:20px 18px 10px;animation:fade .4s ease both}
+.hidden{display:none!important}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---- hero ---- */
+.hero-eyebrow{font-size:12px;font-weight:700;color:var(--blue);
+  text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.hero h1{font-family:'Archivo';font-weight:900;font-size:32px;line-height:1.05;
+  letter-spacing:-.03em;margin-bottom:9px}
+.hero p{color:var(--ink-2);font-size:14px;max-width:34ch;margin-bottom:18px}
+
+/* ---- quick categories ---- */
+.quick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.qcat{background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:11px 6px;display:flex;flex-direction:column;align-items:center;gap:7px;
+  cursor:pointer;transition:.18s;font:inherit}
+.qcat:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.qcat.sel{border-color:var(--blue);background:var(--blue-l)}
+.qcat .ic{width:21px;height:21px;color:var(--blue)}
+.qcat span{font-size:10.5px;font-weight:600;text-align:center;color:var(--ink-2);line-height:1.15}
+.qcat.sel span{color:var(--blue)}
+
+/* ---- composer ---- */
+.composer{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px;box-shadow:var(--shadow)}
+.composer-label{font-size:13px;font-weight:700;display:block;margin-bottom:9px}
+#desc{width:100%;border:1px solid var(--line);border-radius:12px;padding:12px 13px;
+  font:inherit;font-size:14.5px;resize:vertical;background:#fafbfd;transition:.15s}
+#desc:focus{outline:none;border-color:var(--blue);background:#fff;
+  box-shadow:0 0 0 4px rgba(0,80,170,.10)}
+.composer-meta{display:flex;gap:10px;margin-top:12px;align-items:stretch}
+.loc{flex:1;display:flex;align-items:center;gap:7px;background:#fafbfd;
+  border:1px solid var(--line);border-radius:11px;padding:0 11px;color:var(--ink-2)}
+.loc select{border:none;background:none;font:inherit;font-size:12px;
+  font-weight:600;color:var(--ink-2);width:100%;padding:11px 0;outline:none}
+.btn-analyze{display:flex;align-items:center;gap:8px;background:var(--blue);
+  color:#fff;border:none;border-radius:11px;padding:0 16px;font:inherit;
+  font-weight:700;font-size:13.5px;cursor:pointer;transition:.18s;white-space:nowrap}
+.btn-analyze:hover{background:var(--blue-d)}
+.btn-analyze:disabled{opacity:.6;cursor:wait}
+.btn-analyze .ic{width:16px;height:16px}
+
+/* ---- AI result ---- */
+.ai-result{margin-top:16px;animation:fade .4s ease both}
+.ai-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;box-shadow:var(--shadow)}
+.ai-top{padding:15px 16px;display:flex;align-items:flex-start;gap:12px;
+  background:linear-gradient(180deg,var(--blue-l),#fff)}
+.ai-spark{width:34px;height:34px;border-radius:10px;flex:none;
+  background:linear-gradient(135deg,var(--blue),#2a7de1);display:grid;place-items:center}
+.ai-spark svg{width:18px;height:18px;color:#fff;fill:none;stroke:currentColor;stroke-width:2}
+.ai-top h3{font-family:'Archivo';font-size:15px;font-weight:800;margin-bottom:2px}
+.ai-top p{font-size:12px;color:var(--ink-2)}
+.ai-tags{display:flex;flex-wrap:wrap;gap:7px;padding:13px 16px 4px}
+.tag{font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;
+  background:#eef2f7;color:var(--ink-2);display:flex;align-items:center;gap:5px}
+.tag.cat{background:var(--blue-l);color:var(--blue)}
+.tag.p1{background:var(--red-l);color:var(--red)}
+.tag.p2{background:var(--amber-l);color:var(--amber)}
+.tag.p3{background:var(--ok-l);color:var(--ok)}
+.tag.p4{background:#eef2f7;color:var(--ink-2)}
+.ai-fix{padding:14px 16px}
+.ai-fix h4{font-size:12px;font-weight:800;text-transform:uppercase;
+  letter-spacing:.05em;color:var(--ink-2);margin-bottom:10px;display:flex;
+  align-items:center;gap:7px}
+.ai-fix h4 .ic{width:15px;height:15px;color:var(--ok)}
+.steps{list-style:none;display:flex;flex-direction:column;gap:9px}
+.steps li{display:flex;gap:11px;font-size:13.5px;align-items:flex-start}
+.steps li b{flex:none;width:21px;height:21px;border-radius:7px;background:var(--blue);
+  color:#fff;font-size:11px;display:grid;place-items:center;font-weight:800;margin-top:1px}
+.ai-actions{display:flex;gap:9px;padding:4px 16px 16px}
+.ai-actions button{flex:1;border-radius:11px;padding:12px;font:inherit;
+  font-weight:700;font-size:13px;cursor:pointer;border:1px solid var(--line);
+  background:#fff;color:var(--ink);transition:.16s}
+.ai-actions .solved{background:var(--ok);color:#fff;border-color:var(--ok)}
+.ai-actions .solved:hover{filter:brightness(1.05)}
+.ai-actions .escalate{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ai-actions .escalate:hover{background:var(--blue-d)}
+.ai-skeleton{padding:22px 16px;display:flex;flex-direction:column;gap:12px}
+.sk{height:14px;border-radius:7px;background:linear-gradient(90deg,#eef1f6 25%,#e1e6ee 37%,#eef1f6 63%);
+  background-size:400% 100%;animation:sh 1.3s infinite}
+.sk.w70{width:70%}.sk.w40{width:40%}.sk.w90{width:90%}
+@keyframes sh{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.ai-think{font-size:12.5px;color:var(--blue);font-weight:700;
+  display:flex;align-items:center;gap:9px;padding:0 16px 4px}
+.ai-think .spin{width:15px;height:15px;border:2px solid var(--blue-l);
+  border-top-color:var(--blue);border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ---- my tickets / lists ---- */
+.recent-block{margin:22px 0 8px}
+.block-head{font-size:13px;font-weight:800;color:var(--ink-2);margin-bottom:11px;
+  text-transform:uppercase;letter-spacing:.05em}
+.my-tickets{display:flex;flex-direction:column;gap:9px}
+.mini-tk{background:var(--card);border:1px solid var(--line);border-radius:13px;
+  padding:12px 14px;display:flex;align-items:center;gap:11px}
+.mini-tk .pip{width:9px;height:9px;border-radius:50%;flex:none}
+.mini-tk .info{flex:1;min-width:0}
+.mini-tk .info strong{font-size:13px;font-weight:700;display:block;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-tk .info span{font-size:11.5px;color:var(--ink-2)}
+.st{font-size:10.5px;font-weight:800;padding:4px 9px;border-radius:7px;flex:none}
+.st.open{background:var(--blue-l);color:var(--blue)}
+.st.progress{background:var(--amber-l);color:var(--amber)}
+.st.resolved{background:var(--ok-l);color:var(--ok)}
+.empty{text-align:center;color:var(--ink-2);font-size:13px;padding:22px;
+  background:var(--card);border:1px dashed var(--line);border-radius:13px}
+
+/* ---- technician ---- */
+.tech-head{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.tech-head h2,.dash-head h2{font-family:'Archivo';font-size:23px;font-weight:900;
+  letter-spacing:-.02em}
+.tech-head p,.dash-head p{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+.seg{display:flex;background:#e9edf3;border-radius:10px;padding:3px;gap:2px}
+.seg-btn{border:none;background:none;font:inherit;font-size:11.5px;font-weight:700;
+  color:var(--ink-2);padding:7px 11px;border-radius:8px;cursor:pointer;transition:.15s}
+.seg-btn.active{background:#fff;color:var(--blue);box-shadow:0 1px 4px rgba(12,26,43,.10)}
+.tech-list{display:flex;flex-direction:column;gap:11px}
+.tk{background:var(--card);border:1px solid var(--line);border-radius:15px;
+  overflow:hidden;box-shadow:var(--shadow);transition:.2s}
+.tk-bar{height:4px}
+.tk-bar.p1{background:var(--red)}.tk-bar.p2{background:var(--amber)}
+.tk-bar.p3{background:var(--ok)}.tk-bar.p4{background:#cfd6e0}
+.tk-body{padding:14px 15px}
+.tk-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:9px}
+.tk-id{font-size:11px;font-weight:700;color:var(--ink-2);font-family:'Archivo'}
+.tk-prio{font-size:10.5px;font-weight:800;padding:4px 9px;border-radius:7px}
+.tk-prio.p1{background:var(--red-l);color:var(--red)}
+.tk-prio.p2{background:var(--amber-l);color:var(--amber)}
+.tk-prio.p3{background:var(--ok-l);color:var(--ok)}
+.tk-prio.p4{background:#eef2f7;color:var(--ink-2)}
+.tk h4{font-size:14.5px;font-weight:700;margin-bottom:5px;line-height:1.3}
+.tk .tk-desc{font-size:12.5px;color:var(--ink-2);margin-bottom:11px}
+.tk-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:11px}
+.chip{font-size:10.5px;font-weight:600;background:#f1f4f8;color:var(--ink-2);
+  padding:4px 8px;border-radius:7px;display:flex;align-items:center;gap:4px}
+.chip.rec{background:var(--red-l);color:var(--red);font-weight:700}
+.tk-ai{background:linear-gradient(180deg,var(--blue-l),#f7faff);border-radius:11px;
+  padding:11px 12px;font-size:12.5px;margin-bottom:11px;border:1px solid #dce8f8}
+.tk-ai .lab{font-size:10px;font-weight:800;color:var(--blue);text-transform:uppercase;
+  letter-spacing:.06em;display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.tk-ai .lab svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
+.tk-ai b{color:var(--ink)}
+.tk-act{display:flex;gap:8px}
+.tk-act button{flex:1;border:1px solid var(--line);background:#fff;font:inherit;
+  font-weight:700;font-size:12.5px;padding:10px;border-radius:10px;cursor:pointer;
+  transition:.15s;color:var(--ink)}
+.tk-act .res{background:var(--ok);color:#fff;border-color:var(--ok)}
+.tk-act .res:hover{filter:brightness(1.06)}
+.tk-act .prog{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tk-act button:hover{box-shadow:var(--shadow)}
+.tk.done{opacity:.72}
+
+/* ---- dashboard ---- */
+.dash-head{margin-bottom:18px}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:16px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:15px;
+  padding:15px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::after{content:"";position:absolute;right:-18px;top:-18px;width:62px;height:62px;
+  border-radius:50%;background:var(--blue-l);opacity:.6}
+.kpi .kv{font-family:'Archivo';font-size:27px;font-weight:900;letter-spacing:-.02em;
+  position:relative;line-height:1}
+.kpi .kl{font-size:11.5px;color:var(--ink-2);font-weight:600;margin-top:6px;position:relative}
+.kpi .kt{font-size:10.5px;font-weight:800;margin-top:8px;display:inline-flex;
+  align-items:center;gap:4px;position:relative}
+.kt.up{color:var(--ok)}.kt.down{color:var(--red)}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:15px;
+  padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;font-weight:800;margin-bottom:15px}
+.btn-mini{border:1px solid var(--blue);background:var(--blue);color:#fff;font:inherit;
+  font-weight:700;font-size:11.5px;padding:7px 14px;border-radius:9px;cursor:pointer;transition:.15s}
+.btn-mini:hover{background:var(--blue-d)}
+.btn-mini:disabled{opacity:.6;cursor:wait}
+.bars{display:flex;flex-direction:column;gap:11px}
+.bar-row{display:flex;align-items:center;gap:11px;font-size:12px}
+.bar-row .bn{width:96px;font-weight:600;color:var(--ink-2);flex:none;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:10px;background:#eef1f6;border-radius:6px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--blue),#3a86e0);
+  width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.bar-row .bv{width:22px;text-align:right;font-weight:800;font-family:'Archivo';flex:none}
+.predict-body{font-size:13px}
+.predict-body .muted{color:var(--ink-2);font-size:12.5px}
+.risk{border:1px solid var(--line);border-radius:12px;padding:13px;margin-top:10px;
+  display:flex;gap:12px;animation:fade .4s ease both}
+.risk .rl{width:5px;border-radius:4px;flex:none}
+.risk.high .rl{background:var(--red)}.risk.med .rl{background:var(--amber)}
+.risk.low .rl{background:var(--ok)}
+.risk .rc{flex:1}
+.risk .rt{font-weight:800;font-size:13px;display:flex;justify-content:space-between;
+  align-items:center;gap:8px;margin-bottom:5px}
+.risk .rt em{font-style:normal;font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px}
+.risk.high .rt em{background:var(--red-l);color:var(--red)}
+.risk.med .rt em{background:var(--amber-l);color:var(--amber)}
+.risk.low .rt em{background:var(--ok-l);color:var(--ok)}
+.risk .rd{font-size:12px;color:var(--ink-2);line-height:1.5}
+.risk .rd b{color:var(--ink)}
+
+/* ---- tabbar ---- */
+.tabbar{position:absolute;bottom:0;left:0;right:0;display:flex;background:var(--card);
+  border-top:1px solid var(--line);padding:9px 8px calc(9px + env(safe-area-inset-bottom));
+  z-index:20}
+.tab{flex:1;border:none;background:none;font:inherit;display:flex;flex-direction:column;
+  align-items:center;gap:4px;padding:7px 0;color:var(--ink-2);cursor:pointer;
+  position:relative;transition:.15s;border-radius:10px}
+.tab .ic{width:21px;height:21px}
+.tab span{font-size:10.5px;font-weight:700}
+.tab.active{color:var(--blue)}
+.tab .badge{position:absolute;top:2px;right:50%;transform:translateX(20px);
+  background:var(--red);color:#fff;font-size:9.5px;font-weight:800;min-width:17px;
+  height:17px;border-radius:9px;display:none;align-items:center;justify-content:center;
+  padding:0 4px}
+.tab .badge.show{display:flex}
+
+/* ---- toast ---- */
+.toast{position:fixed;left:50%;bottom:30px;transform:translate(-50%,80px);
+  background:var(--ink);color:#fff;padding:13px 20px;border-radius:13px;
+  font-size:13px;font-weight:600;box-shadow:0 14px 30px rgba(12,26,43,.35);
+  opacity:0;transition:.35s cubic-bezier(.2,.9,.2,1);z-index:50;
+  display:flex;align-items:center;gap:9px;max-width:88%}
+.toast.show{transform:translate(-50%,0);opacity:1}
+.toast .ic{width:17px;height:17px;color:var(--yellow)}
+</style>
+
+<script>
+(function(){
+  "use strict";
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+
+  /* ---------- categories ---------- */
+  const CATS = [
+    {id:'caisse', n:'Caisse / Scanner', icon:'<path d="M3 9h18v11H3z"/><path d="M7 9V5h10v4"/><path d="M7 14h2m4 0h4"/>'},
+    {id:'paiement', n:'TPE / Paiement', icon:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M9 17h6"/>'},
+    {id:'reseau', n:'Réseau / Wifi', icon:'<path d="M5 13a10 10 0 0 1 14 0"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1"/>'},
+    {id:'balance', n:'Balance', icon:'<path d="M12 3v18"/><path d="M5 21h14"/><path d="m5 8 7-3 7 3"/><path d="M3 12a3 3 0 0 0 6 0M15 12a3 3 0 0 0 6 0"/>'},
+    {id:'imprimante', n:'Imprimante', icon:'<path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1"/><path d="M8 17h8v4H8z"/>'},
+    {id:'etiquette', n:'Étiq. élec.', icon:'<path d="M3 7h12l5 5-5 5H3z"/><circle cx="8" cy="12" r="1.4"/>'},
+    {id:'froid', n:'Froid / Frigo', icon:'<path d="M12 3v18M5 7l14 10M19 7 5 17"/>'},
+    {id:'autre', n:'Autre', icon:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.5 1.5c0 2-2.5 2-2.5 4"/><circle cx="12" cy="17" r=".5"/>'}
+  ];
+  const catName = id => (CATS.find(c=>c.id===id)||{}).n || 'Autre';
+
+  /* ---------- seed data (simule ServiceNow: incidents passés + récurrence) ---------- */
+  const NOW = Date.now();
+  const H = 3600000;
+  const SEED = [
+    {id:'INC-2041', cat:'froid', loc:'Rayon frais', title:'Alarme température vitrine produits frais', desc:'La vitrine réfrigérée affiche 11°C, alarme sonore continue.', prio:'p1', status:'progress', rec:1, t:NOW-2*H, ai:'Risque rupture chaîne du froid. Vérifier porte/joint puis basculer le stock en chambre froide. Escalade N2 maintenance frigorifique.'},
+    {id:'INC-2039', cat:'paiement', loc:'Caisses', title:'TPE caisse 5 — paiement CB refusé', desc:'« Erreur de connexion » sur tous les paiements carte caisse 5.', prio:'p2', status:'progress', rec:2, t:NOW-5*H, ai:'Corrélé à une coupure réseau back-office 14h10. Redémarrer le TPE, vérifier le switch caisse.'},
+    {id:'INC-2036', cat:'caisse', loc:'Caisses', title:'Caisse 3 — scanner ne lit plus les codes-barres', desc:'Le lecteur ne bipe plus depuis 5 min, file qui s\u2019allonge.', prio:'p2', status:'resolved', rec:3, t:NOW-26*H, ai:'Nettoyage vitre + redémarrage lecteur. Récurrent (3e fois ce mois) → remplacement préconisé.'},
+    {id:'INC-2030', cat:'imprimante', loc:'Caisses', title:'Imprimante ticket caisse 2 — bourrage papier', desc:'Bourrage papier répétitif à chaque ticket.', prio:'p3', status:'resolved', rec:4, t:NOW-50*H, ai:'Galet d\u2019entraînement usé. Récurrent x4 → pièce à commander.'},
+    {id:'INC-2028', cat:'reseau', loc:'Back-office', title:'Wifi back-office — déconnexions répétées', desc:'Le PC commandes perd le wifi toutes les 10 min.', prio:'p3', status:'open', rec:2, t:NOW-30*H, ai:'Corrélé à mise à jour firmware borne wifi (J-1). Rollback firmware recommandé.'},
+    {id:'INC-2025', cat:'balance', loc:'Rayon frais', title:'Balance fruits & légumes — affichage figé', desc:'Écran balance bloqué, impossible de peser.', prio:'p3', status:'resolved', rec:1, t:NOW-72*H, ai:'Redémarrage à froid. RAS depuis.'},
+    {id:'INC-2019', cat:'etiquette', loc:'Réserve', title:'Étiquettes élec. surgelés non synchronisées', desc:'Prix affichés différents du système caisse rayon surgelés.', prio:'p4', status:'resolved', rec:1, t:NOW-96*H, ai:'Resynchronisation passerelle ESL. Corrigé.'},
+    {id:'INC-2014', cat:'caisse', loc:'Caisses', title:'Caisse 7 — tiroir-caisse ne s\u2019ouvre plus', desc:'Le tiroir reste bloqué après encaissement.', prio:'p2', status:'resolved', rec:1, t:NOW-120*H, ai:'Mécanisme déverrouillé manuellement, capteur recalibré.'},
+    {id:'INC-2008', cat:'paiement', loc:'Caisses', title:'TPE caisse 1 — sans contact inopérant', desc:'Paiement sans contact non détecté, CB à puce OK.', prio:'p3', status:'resolved', rec:2, t:NOW-140*H, ai:'Antenne NFC réinitialisée via menu maintenance.'},
+    {id:'INC-2001', cat:'reseau', loc:'Caisses', title:'Coupure réseau caisses 4 à 8', desc:'5 caisses hors ligne simultanément 12 min.', prio:'p1', status:'resolved', rec:1, t:NOW-170*H, ai:'Switch caisses redémarré. Corrélé à pic de charge. Supervision renforcée.'}
+  ];
+
+  /* ---------- storage ---------- */
+  let MEM = null;
+  const KEY = 'resolvia:tickets:v1';
+  async function load(){
+    try{
+      const r = await window.storage.get(KEY);
+      if(r && r.value){ MEM = JSON.parse(r.value); return; }
+    }catch(e){ /* clé absente ou storage indispo */ }
+    MEM = SEED.slice();
+    save();
+  }
+  async function save(){
+    try{ await window.storage.set(KEY, JSON.stringify(MEM)); }
+    catch(e){ /* fallback mémoire de session */ }
+  }
+
+  /* ---------- AI (Claude API + fallback local) ---------- */
+  let AI_ONLINE = true;
+  const PRIO_LABEL = {p1:'P1 · Critique',p2:'P2 · Élevée',p3:'P3 · Modérée',p4:'P4 · Faible'};
+
+  function localAnalyze(desc, catHint){
+    const d = (desc||'').toLowerCase();
+    let cat = catHint || 'autre';
+    if(!catHint){
+      if(/cais|scan|code.?barr|tiroir|douchette/.test(d)) cat='caisse';
+      else if(/tpe|carte|cb|paiement|sans contact|nfc/.test(d)) cat='paiement';
+      else if(/wifi|r[ée]seau|connexion|internet|d[ée]connex/.test(d)) cat='reseau';
+      else if(/balance|peser|pes[ée]e/.test(d)) cat='balance';
+      else if(/imprim|ticket|papier|bourrage/.test(d)) cat='imprimante';
+      else if(/[ée]tiquet|esl|prix.*affich/.test(d)) cat='etiquette';
+      else if(/froid|frigo|temp[ée]ratur|chaine du froid|vitrine/.test(d)) cat='froid';
+    }
+    let prio='p3';
+    if(/froid|temp[ée]ratur|chaine du froid|toutes les cais|plusieurs cais|hors ligne|coupure|aucun paiement|s[ée]curit[ée]/.test(d)) prio='p1';
+    else if(/cais|tpe|paiement|file|client|attente/.test(d)) prio='p2';
+    else if(/lent|parfois|de temps en temps|étiquette/.test(d)) prio='p4';
+    const FIX = {
+      caisse:['Vérifiez que le câble du lecteur est bien branché.','Nettoyez la vitre du scanner avec un chiffon sec.','Éteignez la caisse 10 s puis rallumez-la.'],
+      paiement:['Vérifiez le câble réseau du TPE.','Redémarrez le terminal (maintenir bouton jaune 5 s).','Testez une transaction à 0,01 €.'],
+      reseau:['Vérifiez les voyants du switch/borne (vert fixe).','Redémarrez l\u2019équipement réseau concerné.','Testez sur un autre poste pour isoler la panne.'],
+      balance:['Déchargez le plateau et tarez la balance.','Redémarrez la balance via l\u2019interrupteur arrière.','Vérifiez le câble d\u2019alimentation.'],
+      imprimante:['Ouvrez le capot et retirez le papier coincé.','Réinsérez correctement le rouleau.','Relancez une impression test.'],
+      etiquette:['Lancez une resynchronisation depuis le menu ESL.','Vérifiez la passerelle (voyant vert).','Patientez 2 min puis recontrôlez le prix.'],
+      froid:['Vérifiez que la porte/le rideau est bien fermé.','Ne pas ouvrir la vitrine, préservez le froid.','Préparez le transfert du stock en chambre froide.'],
+      autre:['Notez précisément ce qui ne fonctionne pas.','Redémarrez l\u2019équipement si possible.','Indiquez l\u2019heure de début du problème.']
+    };
+    return {
+      category:cat, priority:prio,
+      summary:'Analyse heuristique locale (IA hors ligne).',
+      impact: prio==='p1'?'Impact fort sur l\u2019activité du magasin.':prio==='p2'?'Gêne l\u2019encaissement / les clients.':'Impact limité, à traiter rapidement.',
+      self_help: FIX[cat]||FIX.autre,
+      needs_technician: prio==='p1'||prio==='p2',
+      eta_minutes: prio==='p1'?20:prio==='p2'?45:120
+    };
+  }
+
+  async function aiAnalyze(desc, catHint){
+    const prompt = `Tu es l'IA support IT de Lidl (magasins). Un employé signale un incident technique.
+Description: """${desc}"""
+${catHint? ('Catégorie suggérée par employé: '+catName(catHint)) : ''}
+Catégories possibles (id): caisse, paiement, reseau, balance, imprimante, etiquette, froid, autre.
+Réponds UNIQUEMENT avec un objet JSON valide, sans texte ni balises, au format exact :
+{"category":"<id>","priority":"p1|p2|p3|p4","summary":"<diagnostic court, 1 phrase>","impact":"<impact business, 1 phrase>","self_help":["<étape simple 1>","<étape 2>","<étape 3>"],"needs_technician":true|false,"eta_minutes":<entier>}
+Règles priorité: p1 = perte de CA / sécurité / chaîne du froid / plusieurs caisses ; p2 = 1 caisse ou paiement bloqué ; p3 = gêne modérée ; p4 = mineur. Les étapes self_help doivent être réalisables par une caissière sans compétence IT, en français, max 3.`;
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
+        messages:[{role:"user",content:prompt}]})
+    });
+    if(!res.ok) throw new Error('api '+res.status);
+    const data = await res.json();
+    const txt = (data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    const clean = txt.replace(/```json|```/g,'').trim();
+    const obj = JSON.parse(clean);
+    if(!obj.category || !obj.priority) throw new Error('bad json');
+    return obj;
+  }
+
+  async function analyze(desc, catHint){
+    try{
+      const r = await aiAnalyze(desc, catHint);
+      AI_ONLINE = true; netUI();
+      return r;
+    }catch(e){
+      AI_ONLINE = false; netUI();
+      return localAnalyze(desc, catHint);
+    }
+  }
+
+  async function aiPredict(){
+    const hist = MEM.map(t=>({cat:t.cat,title:t.title,prio:t.prio,status:t.status,rec:t.rec}));
+    const prompt = `Tu es l'IA de pilotage IT de Lidl. Voici l'historique d'incidents magasin (JSON):
+${JSON.stringify(hist)}
+En croisant la récurrence (champ rec = nb d'occurrences), les catégories et les priorités, identifie les 3 risques de panne les plus probables à anticiper.
+Réponds UNIQUEMENT en JSON, format exact :
+{"risks":[{"equipment":"<équipement>","level":"high|med|low","probability":"<ex: 78%>","reason":"<pourquoi, court>","action":"<action préventive concrète>"}]}`;
+    const res = await fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,
+        messages:[{role:"user",content:prompt}]})
+    });
+    if(!res.ok) throw new Error('api');
+    const data = await res.json();
+    const txt=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    return JSON.parse(txt.replace(/```json|```/g,'').trim());
+  }
+  function localPredict(){
+    return {risks:[
+      {equipment:'Imprimante ticket — Caisse 2',level:'high',probability:'82%',reason:'4 incidents récurrents, galet d\u2019entraînement usé.',action:'Commander la pièce et planifier le remplacement avant rupture.'},
+      {equipment:'Scanner — Caisse 3',level:'high',probability:'71%',reason:'3 pannes/mois, dégradation matérielle confirmée.',action:'Remplacer le lecteur, ne pas attendre la prochaine panne.'},
+      {equipment:'Borne wifi back-office',level:'med',probability:'54%',reason:'Déconnexions corrélées à la dernière mise à jour firmware.',action:'Rollback firmware + supervision Grafana renforcée.'}
+    ]};
+  }
+
+  /* ---------- UI helpers ---------- */
+  const pip = p => p==='p1'?'var(--red)':p==='p2'?'var(--amber)':p==='p3'?'var(--ok)':'#cfd6e0';
+  function toast(msg){
+    const t=$('#toast');
+    t.innerHTML='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'+msg;
+    t.classList.add('show'); clearTimeout(t._tm);
+    t._tm=setTimeout(()=>t.classList.remove('show'),3200);
+  }
+  function netUI(){
+    const p=$('#net-pill');
+    p.classList.toggle('off',!AI_ONLINE);
+    $('#net-text').textContent = AI_ONLINE?'IA active':'IA locale';
+  }
+  function timeAgo(t){
+    const m=Math.round((Date.now()-t)/60000);
+    if(m<60) return 'il y a '+m+' min';
+    const h=Math.round(m/60); if(h<24) return 'il y a '+h+' h';
+    return 'il y a '+Math.round(h/24)+' j';
+  }
+
+  /* ---------- render: quick categories ---------- */
+  let selCat=null;
+  function renderCats(){
+    $('#quick-grid').innerHTML = CATS.map(c=>
+      `<button class="qcat" data-c="${c.id}">
+        <svg class="ic" viewBox="0 0 24 24">${c.icon}</svg>
+        <span>${c.n}</span></button>`).join('');
+    $$('.qcat').forEach(b=>b.onclick=()=>{
+      const id=b.dataset.c;
+      selCat = selCat===id?null:id;
+      $$('.qcat').forEach(x=>x.classList.toggle('sel',x.dataset.c===selCat));
+    });
+  }
+
+  /* ---------- render: my tickets ---------- */
+  function renderMine(){
+    const mine = MEM.filter(t=>t.mine).slice().reverse();
+    const el=$('#my-tickets');
+    if(!mine.length){ el.innerHTML='<div class="empty">Aucun signalement pour le moment.</div>'; return; }
+    el.innerHTML = mine.map(t=>`
+      <div class="mini-tk">
+        <span class="pip" style="background:${pip(t.prio)}"></span>
+        <div class="info"><strong>${t.title}</strong>
+          <span>${t.id} · ${timeAgo(t.t)}</span></div>
+        <span class="st ${t.status}">${t.status==='open'?'Ouvert':t.status==='progress'?'En cours':'Résolu'}</span>
+      </div>`).join('');
+  }
+
+  /* ---------- AI result card ---------- */
+  let lastAnalysis=null, lastDesc='', lastLoc='';
+  function showSkeleton(){
+    const r=$('#ai-result'); r.classList.remove('hidden');
+    r.innerHTML=`<div class="ai-card">
+      <div class="ai-think"><span class="spin"></span>L'IA analyse votre signalement…</div>
+      <div class="ai-skeleton"><div class="sk w40"></div><div class="sk w90"></div>
+      <div class="sk w70"></div><div class="sk"></div><div class="sk w70"></div></div></div>`;
+    r.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+  function showAnalysis(a){
+    lastAnalysis=a;
+    const pc=a.priority;
+    const card=`<div class="ai-card">
+      <div class="ai-top">
+        <div class="ai-spark"><svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <div><h3>Diagnostic IA</h3><p>${a.summary||'Analyse terminée.'}</p></div>
+      </div>
+      <div class="ai-tags">
+        <span class="tag cat">${catName(a.category)}</span>
+        <span class="tag ${pc}">${PRIO_LABEL[pc]||pc}</span>
+        <span class="tag">⏱ Résolution ~${a.eta_minutes||30} min</span>
+      </div>
+      <div class="ai-fix">
+        <h4><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>Essayez d'abord ceci</h4>
+        <ol class="steps">${(a.self_help||[]).map((s,i)=>`<li><b>${i+1}</b><span>${s}</span></li>`).join('')}</ol>
+      </div>
+      <div class="ai-actions">
+        <button class="solved" id="ai-solved">✓ Problème résolu</button>
+        <button class="escalate" id="ai-escalate">Créer le ticket → support</button>
+      </div></div>`;
+    const r=$('#ai-result'); r.innerHTML=card;
+    r.scrollIntoView({behavior:'smooth',block:'nearest'});
+    $('#ai-solved').onclick=()=>{
+      $('#ai-result').classList.add('hidden');
+      $('#desc').value=''; selCat=null;
+      $$('.qcat').forEach(x=>x.classList.remove('sel'));
+      toast('Top ! Aucun ticket créé — temps gagné pour tous.');
+    };
+    $('#ai-escalate').onclick=createTicket;
+  }
+
+  function createTicket(){
+    const a=lastAnalysis; if(!a) return;
+    const num = 2042 + MEM.filter(t=>t.mine).length + 1;
+    const tk={
+      id:'INC-'+num, cat:a.category, loc:lastLoc,
+      title:(lastDesc.length>52?lastDesc.slice(0,52)+'…':lastDesc),
+      desc:lastDesc, prio:a.priority, status:'open',
+      rec:1+MEM.filter(t=>t.cat===a.category).length,
+      t:Date.now(), mine:true,
+      ai:(a.summary||'')+' '+(a.impact||'')+' Résolution conseillée : '+((a.self_help||[]).join(' / '))
+    };
+    MEM.push(tk); save();
+    $('#ai-result').classList.add('hidden');
+    $('#desc').value=''; selCat=null;
+    $$('.qcat').forEach(x=>x.classList.remove('sel'));
+    renderMine(); renderTech(); renderDash(); updateBadge();
+    toast('Ticket '+tk.id+' créé et priorisé '+(PRIO_LABEL[tk.prio]||'').split(' ')[0]+' — support notifié.');
+  }
+
+  $('#btn-analyze').onclick = async ()=>{
+    const desc=$('#desc').value.trim();
+    if(desc.length<6){ toast('Décrivez le problème en quelques mots.'); $('#desc').focus(); return; }
+    lastDesc=desc; lastLoc=$('#store-loc').value;
+    const btn=$('#btn-analyze'); btn.disabled=true;
+    btn.querySelector('.ba-text').textContent='Analyse…';
+    showSkeleton();
+    const a = await analyze(desc, selCat);
+    btn.disabled=false; btn.querySelector('.ba-text').textContent='Analyser avec l\u2019IA';
+    showAnalysis(a);
+  };
+
+  /* ---------- technician ---------- */
+  let techFilter='open';
+  const PRIO_RANK={p1:0,p2:1,p3:2,p4:3};
+  function renderTech(){
+    let list=MEM.slice();
+    if(techFilter==='open') list=list.filter(t=>t.status!=='resolved');
+    else if(techFilter==='resolved') list=list.filter(t=>t.status==='resolved');
+    list.sort((a,b)=> (a.status==='resolved')-(b.status==='resolved')
+      || PRIO_RANK[a.prio]-PRIO_RANK[b.prio] || b.t-a.t);
+    const open=MEM.filter(t=>t.status!=='resolved').length;
+    $('#tech-sub').textContent = open+' ticket'+(open>1?'s':'')+' actif'+(open>1?'s':'')+' · triés par criticité IA';
+    const el=$('#tech-list');
+    if(!list.length){ el.innerHTML='<div class="empty">Aucun ticket dans cette vue.</div>'; return; }
+    el.innerHTML=list.map(t=>{
+      const done=t.status==='resolved';
+      return `<div class="tk ${done?'done':''}">
+        <div class="tk-bar ${t.prio}"></div>
+        <div class="tk-body">
+          <div class="tk-row">
+            <span class="tk-id">${t.id} · ${timeAgo(t.t)}</span>
+            <span class="tk-prio ${t.prio}">${(PRIO_LABEL[t.prio]||t.prio)}</span>
+          </div>
+          <h4>${t.title}</h4>
+          <div class="tk-desc">${t.desc}</div>
+          <div class="tk-meta">
+            <span class="chip">${catName(t.cat)}</span>
+            <span class="chip">📍 ${t.loc||'Magasin'}</span>
+            ${t.rec>1?`<span class="chip rec">⟳ Récurrent ×${t.rec}</span>`:''}
+          </div>
+          <div class="tk-ai">
+            <div class="lab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Préconisation IA · base de connaissance</div>
+            ${t.ai||'—'}
+          </div>
+          ${done?'<div class="tk-act"><button disabled style="opacity:.6">✓ Résolu</button></div>'
+          :`<div class="tk-act">
+              ${t.status==='open'?`<button class="prog" data-prog="${t.id}">Prendre en charge</button>`:''}
+              <button class="res" data-res="${t.id}">Marquer résolu</button>
+            </div>`}
+        </div></div>`;
+    }).join('');
+    $$('[data-res]').forEach(b=>b.onclick=()=>{
+      const t=MEM.find(x=>x.id===b.dataset.res); t.status='resolved'; save();
+      renderTech(); renderMine(); renderDash(); updateBadge();
+      toast(t.id+' résolu — interruption stoppée.');
+    });
+    $$('[data-prog]').forEach(b=>b.onclick=()=>{
+      const t=MEM.find(x=>x.id===b.dataset.prog); t.status='progress'; save();
+      renderTech(); renderMine(); updateBadge();
+      toast(t.id+' pris en charge.');
+    });
+  }
+  $$('#tech-filter .seg-btn').forEach(b=>b.onclick=()=>{
+    $$('#tech-filter .seg-btn').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active'); techFilter=b.dataset.f; renderTech();
+  });
+
+  /* ---------- dashboard ---------- */
+  function renderDash(){
+    const open=MEM.filter(t=>t.status!=='resolved').length;
+    const resolved=MEM.filter(t=>t.status==='resolved').length;
+    const total=MEM.length;
+    const rate= total? Math.round(resolved/total*100):0;
+    const rec=MEM.filter(t=>t.rec>2).length;
+    $('#kpi-grid').innerHTML=`
+      <div class="kpi"><div class="kv">${open}</div><div class="kl">Incidents actifs</div>
+        <div class="kt down">↑ priorisés par l'IA</div></div>
+      <div class="kpi"><div class="kv">${rate}%</div><div class="kl">Taux de résolution</div>
+        <div class="kt up">↑ +12 pts vs S-1</div></div>
+      <div class="kpi"><div class="kv">31<small style="font-size:14px">min</small></div><div class="kl">MTTR moyen</div>
+        <div class="kt up">↓ −42% avec l'IA</div></div>
+      <div class="kpi"><div class="kv">${rec}</div><div class="kl">Incidents récurrents</div>
+        <div class="kt down">à éradiquer</div></div>`;
+    const byCat={};
+    MEM.forEach(t=>byCat[t.cat]=(byCat[t.cat]||0)+1);
+    const rows=Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+    const max=Math.max(...rows.map(r=>r[1]),1);
+    $('#bars').innerHTML=rows.map(([c,v])=>`
+      <div class="bar-row"><span class="bn">${catName(c)}</span>
+        <span class="bar-track"><span class="bar-fill" data-w="${Math.round(v/max*100)}"></span></span>
+        <span class="bv">${v}</span></div>`).join('');
+    requestAnimationFrame(()=>requestAnimationFrame(()=>
+      $$('#bars .bar-fill').forEach(f=>f.style.width=f.dataset.w+'%')));
+  }
+  $('#btn-predict').onclick = async ()=>{
+    const b=$('#btn-predict'); b.disabled=true; b.textContent='Analyse…';
+    $('#predict-body').innerHTML='<div class="ai-think" style="padding:6px 0"><span class="spin"></span>Croisement récurrence × résolutions × événements connexes…</div>';
+    let p;
+    try{ p=await aiPredict(); AI_ONLINE=true; }
+    catch(e){ AI_ONLINE=false; p=localPredict(); }
+    netUI();
+    b.disabled=false; b.textContent='Relancer';
+    $('#predict-body').innerHTML =
+      `<p class="muted" style="margin-bottom:4px">L'IA a identifié ${p.risks.length} équipements à risque :</p>`+
+      p.risks.map(r=>`<div class="risk ${r.level}">
+        <div class="rl"></div>
+        <div class="rc">
+          <div class="rt">${r.equipment}<em>${r.probability||''} ${r.level==='high'?'· élevé':r.level==='med'?'· moyen':'· faible'}</em></div>
+          <div class="rd">${r.reason} <br><b>Action :</b> ${r.action}</div>
+        </div></div>`).join('');
+  };
+
+  /* ---------- nav ---------- */
+  const ROLE={employee:'Espace employé',tech:'Espace technicien',dash:'Pilotage IA'};
+  function go(v){
+    $$('.view').forEach(s=>s.classList.toggle('hidden',s.dataset.view!==v));
+    $$('.tab').forEach(t=>t.classList.toggle('active',t.dataset.go===v));
+    $('#role-label').textContent=ROLE[v];
+    $('#screen').scrollTop=0;
+    if(v==='tech') renderTech();
+    if(v==='dash') renderDash();
+  }
+  $$('.tab').forEach(t=>t.onclick=()=>go(t.dataset.go));
+  function updateBadge(){
+    const n=MEM.filter(t=>t.status==='open').length;
+    const b=$('#tab-badge-tech');
+    b.textContent=n; b.classList.toggle('show',n>0);
+  }
+
+  /* ---------- boot ---------- */
+  (async function(){
+    await load();
+    renderCats(); renderMine(); renderTech(); renderDash();
+    updateBadge(); netUI();
+  })();
+})();
+</script>
