@@ -1,0 +1,1547 @@
+<!-- ResolvIA — Lidl IT · UTT Innovation Crunch Time -->
+<!-- Criticité métier  <>  Responsabilité de résolution -->
+<div id="app-root">
+<div class="phone">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"><span>R</span></div>
+      <div class="brand-text">
+        <strong>ResolvIA</strong>
+        <em id="role-label">Espace magasin</em>
+      </div>
+    </div>
+    <div class="net-pill" id="net-pill"><span class="dot"></span><span id="net-text">IA</span></div>
+  </header>
+
+  <main id="screen">
+
+    <!-- ===== EMPLOYE ===== -->
+    <section class="view" data-view="employee">
+      <div class="hero">
+        <div class="hero-eyebrow">Un incident en magasin&nbsp;?</div>
+        <h1>Signalez,<br>l'IA priorise.</h1>
+        <p>Décrivez le problème simplement. L'IA pose les bonnes questions et oriente vers le bon support.</p>
+      </div>
+
+      <div class="quick-grid" id="quick-grid"></div>
+
+      <div class="composer">
+        <label class="composer-label">Que se passe-t-il&nbsp;?</label>
+        <textarea id="desc" rows="3" placeholder="Ex : Plus de réseau en SPM suite à une coupure de courant, les caisses sont offline…"></textarea>
+        <div class="composer-meta">
+          <div class="loc">
+            <svg viewBox="0 0 24 24" class="ic"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <select id="store-loc">
+              <option>SPM 4012 — Troyes — DR15</option>
+              <option>SPM 4012 — Caisses</option>
+              <option>SPM 4012 — Back-office / serveur</option>
+              <option>SPM 4012 — Réserve / MOBI</option>
+            </select>
+          </div>
+          <button class="btn-analyze" id="btn-analyze">
+            <span class="ba-text">Analyser</span>
+            <svg viewBox="0 0 24 24" class="ic"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div id="ai-result" class="ai-result hidden"></div>
+
+      <div class="recent-block">
+        <div class="block-head">Vos signalements</div>
+        <div id="my-tickets" class="my-tickets"></div>
+      </div>
+    </section>
+
+    <!-- ===== TECHNICIEN ===== -->
+    <section class="view hidden" data-view="tech">
+      <div class="tech-head">
+        <div><h2>File support</h2><p id="tech-sub">Triée par criticité métier</p></div>
+        <div class="seg" id="tech-filter">
+          <button class="seg-btn active" data-f="open">Actifs</button>
+          <button class="seg-btn" data-f="all">Tous</button>
+          <button class="seg-btn" data-f="resolved">Clos</button>
+        </div>
+      </div>
+      <div class="legend">
+        <span><i class="sw crit"></i>Criticité métier = impact sur la vente</span>
+        <span><i class="sw own"></i>Responsabilité = qui agit</span>
+      </div>
+      <div id="tech-list" class="tech-list"></div>
+    </section>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section class="view hidden" data-view="dash">
+      <div class="dash-head"><h2>Pilotage IA</h2><p>Anticiper · Prioriser juste · Réduire l'interruption</p></div>
+      <div class="kpi-grid" id="kpi-grid"></div>
+
+      <div class="panel gap">
+        <div class="panel-head"><span>Écarts de priorisation détectés</span></div>
+        <p class="muted">Incidents où la priorité du système sous-évalue l'impact métier réel.</p>
+        <div id="gap-list" class="gap-list"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><span>Volume par équipement (cmdb_ci)</span></div>
+        <div id="bars" class="bars"></div>
+      </div>
+
+      <div class="panel predict">
+        <div class="panel-head"><span>Prédiction de pannes &amp; recommandations</span>
+          <button class="btn-mini" id="btn-predict">Analyser</button></div>
+        <div id="predict-body" class="predict-body">
+          <p class="muted">L'IA croise la récurrence, les résolutions passées (base de connaissance) et les événements connexes (mises à jour, coupures) pour anticiper les prochaines pannes.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tab active" data-go="employee">
+      <svg viewBox="0 0 24 24" class="ic"><path d="M4 19V9l8-5 8 5v10"/><path d="M9 19v-6h6v6"/></svg><span>Signaler</span></button>
+    <button class="tab" data-go="tech">
+      <svg viewBox="0 0 24 24" class="ic"><path d="m14 7 3 3"/><path d="M5 19 16 8l-3-3L2 16v3h3Z"/><path d="m18 6 1.5-1.5a2 2 0 0 0-3-3L15 3"/></svg><span>Support</span><em class="badge" id="tab-badge"></em></button>
+    <button class="tab" data-go="dash">
+      <svg viewBox="0 0 24 24" class="ic"><path d="M4 19V5M4 19h16"/><rect x="7" y="11" width="3" height="6"/><rect x="12" y="7" width="3" height="10"/><rect x="17" y="13" width="3" height="4"/></svg><span>Pilotage IA</span></button>
+  </nav>
+</div>
+<div id="toast" class="toast"></div>
+</div>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=Hanken+Grotesk:wght@400;500;600;700&display=swap');
+#app-root *{box-sizing:border-box;margin:0;padding:0}
+#app-root{
+  --yellow:#FFD800;--yellow-d:#E6C200;--yellow-l:#FFFBE0;--yellow-ll:#FFFACC;
+  --blue:#0050AA;--blue-d:#003D82;--blue-l:#E5EEFF;--blue-ll:#D0E2FF;
+  --red:#E3000F;--red-l:#FDEBEC;
+  --ink:#0c1a2b;--ink-2:#5b6b7d;--line:#E4E9F0;--bg:#F5F7FA;--card:#fff;
+  --ok:#0a8f5b;--ok-l:#e6f5ee;--amber:#c47a00;--amber-l:#fdf2dd;
+  --own:#0e7490;--own-l:#e2f3f6;
+  --r:16px;--shadow:0 1px 3px rgba(12,26,43,.07),0 8px 24px rgba(12,26,43,.08);
+  font-family:'Hanken Grotesk',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.45;
+  display:flex;justify-content:center;align-items:flex-start;min-height:100vh;padding:18px 12px 28px;
+  background: linear-gradient(160deg,#E5EEFF 0%,#FFFBE0 50%,#f5f7fa 100%);
+}
+#app-root .phone{width:100%;max-width:440px;background:var(--bg);border-radius:28px;overflow:hidden;
+  position:relative;display:flex;flex-direction:column;min-height:780px;
+  box-shadow:0 32px 80px -16px rgba(0,40,100,.22),0 0 0 1.5px rgba(0,80,170,.08);}
+
+/* ---- TOPBAR ---- */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 14px;
+  background:var(--blue);border-bottom:3px solid var(--yellow);position:sticky;top:0;z-index:20}
+.brand{display:flex;align-items:center;gap:11px}
+.brand-mark{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;
+  background:var(--yellow);box-shadow:0 4px 12px rgba(255,216,0,.45)}
+.brand-mark span{font-family:'Archivo';font-weight:900;color:var(--blue);font-size:20px}
+.brand-text{display:flex;flex-direction:column;line-height:1.1}
+.brand-text strong{font-family:'Archivo';font-weight:900;font-size:18px;letter-spacing:-.02em;color:#fff}
+.brand-text em{font-style:normal;font-size:11px;color:rgba(255,255,255,.65);font-weight:500}
+.net-pill{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+  background:rgba(255,255,255,.15);color:#fff;padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.2)}
+.net-pill.off{background:rgba(255,216,0,.15);color:var(--yellow)}
+.net-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--yellow);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,216,0,.5)}70%{box-shadow:0 0 0 7px rgba(255,216,0,0)}100%{box-shadow:0 0 0 0 rgba(255,216,0,0)}}
+.net-pill.off .dot{background:var(--amber)}
+
+/* ---- MAIN ---- */
+main#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:92px}
+.view{padding:20px 18px 10px;animation:fade .4s ease both}
+.hidden{display:none!important}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---- HERO ---- */
+.hero{margin-bottom:20px;padding:18px 16px 16px;background:var(--card);border-radius:18px;
+  border:1px solid var(--line);border-left:4px solid var(--yellow);box-shadow:var(--shadow)}
+.hero-eyebrow{font-size:11.5px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;
+  display:flex;align-items:center;gap:7px}
+.hero-eyebrow::before{content:'';display:inline-block;width:16px;height:3px;border-radius:2px;background:var(--yellow)}
+.hero h1{font-family:'Archivo';font-weight:900;font-size:30px;line-height:1.06;letter-spacing:-.03em;margin-bottom:8px}
+.hero p{color:var(--ink-2);font-size:13.5px;max-width:38ch;line-height:1.5}
+
+/* ---- QUICK GRID ---- */
+.quick-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.qcat{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:14px 6px;display:flex;
+  flex-direction:column;align-items:center;gap:7px;cursor:pointer;transition:.18s;font:inherit}
+.qcat:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--blue-ll)}
+.qcat.sel{border-color:var(--yellow);background:var(--yellow-l);box-shadow:0 0 0 2px var(--yellow)}
+.qcat .ic{width:22px;height:22px;color:var(--blue)}
+.qcat.sel .ic{color:var(--blue)}
+.qcat span{font-size:10.5px;font-weight:700;text-align:center;color:var(--ink-2);line-height:1.15}
+.qcat.sel span{color:var(--blue)}
+
+/* ---- COMPOSER ---- */
+.composer{background:var(--card);border:1.5px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow)}
+.composer-label{font-size:13px;font-weight:800;display:block;margin-bottom:10px;color:var(--ink)}
+#desc{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;font:inherit;font-size:14.5px;
+  resize:vertical;background:#fafbfd;transition:.15s;min-height:80px}
+#desc:focus{outline:none;border-color:var(--blue);background:#fff;box-shadow:0 0 0 4px rgba(0,80,170,.1)}
+.composer-meta{display:flex;gap:10px;margin-top:12px;align-items:stretch}
+.loc{flex:1;display:flex;align-items:center;gap:7px;background:#fafbfd;border:1.5px solid var(--line);
+  border-radius:12px;padding:0 12px;color:var(--ink-2)}
+.loc .ic{flex:none;width:16px;height:16px}
+.loc select{border:none;background:none;font:inherit;font-size:12px;font-weight:600;color:var(--ink-2);width:100%;padding:13px 0;outline:none}
+.btn-analyze{display:flex;align-items:center;gap:8px;background:var(--yellow);color:var(--blue);border:none;border-radius:12px;
+  padding:0 20px;height:48px;font:inherit;font-weight:800;font-size:14px;cursor:pointer;transition:.18s;white-space:nowrap;
+  box-shadow:0 4px 12px rgba(255,216,0,.4)}
+.btn-analyze:hover{background:var(--yellow-d);box-shadow:0 6px 16px rgba(255,216,0,.5);transform:translateY(-1px)}
+.btn-analyze:disabled{opacity:.6;cursor:wait;transform:none;box-shadow:none}
+.btn-analyze .ic{width:16px;height:16px;stroke:var(--blue)}
+
+/* ---- AI RESULT ---- */
+.ai-result{margin-top:16px;animation:fade .4s ease both}
+.ai-card{background:var(--card);border:1.5px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+.ai-top{padding:16px;display:flex;align-items:flex-start;gap:12px;
+  background:linear-gradient(135deg,var(--blue) 0%,var(--blue-d) 100%)}
+.ai-spark{width:36px;height:36px;border-radius:10px;flex:none;display:grid;place-items:center;
+  background:var(--yellow);box-shadow:0 4px 10px rgba(255,216,0,.4)}
+.ai-spark svg{width:18px;height:18px;color:var(--blue);fill:none;stroke:currentColor;stroke-width:2}
+.ai-top h3{font-family:'Archivo';font-size:15px;font-weight:900;margin-bottom:3px;color:#fff}
+.ai-top p{font-size:12px;color:rgba(255,255,255,.7)}
+.axes{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px 16px 4px}
+.axis{border:1.5px solid var(--line);border-radius:12px;padding:12px}
+.axis .al{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);
+  display:flex;align-items:center;gap:5px;margin-bottom:7px}
+.axis .al .ic{width:12px;height:12px}
+.crit-pill{display:inline-flex;align-items:center;gap:6px;font-family:'Archivo';font-weight:900;font-size:15px;
+  padding:5px 11px;border-radius:9px}
+.crit-pill.P1{background:var(--red);color:#fff}
+.crit-pill.P2{background:var(--amber);color:#fff}
+.crit-pill.P3{background:var(--blue);color:#fff}
+.crit-pill.P4{background:#9aa7b6;color:#fff}
+.axis .sub{font-size:11px;color:var(--ink-2);margin-top:7px;line-height:1.4}
+.axis.own{background:var(--own-l);border-color:#cce6ea}
+.axis.own .al{color:var(--own)}
+.own-tag{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:12.5px;color:var(--own);
+  background:#fff;border:1.5px solid #bfe2e7;padding:6px 10px;border-radius:9px}
+.own-tag .ic{width:14px;height:14px}
+.contrast{margin:12px 16px 2px;background:var(--yellow-ll);border:1.5px solid var(--yellow);border-radius:11px;
+  padding:10px 12px;font-size:12px;display:flex;align-items:flex-start;gap:9px}
+.contrast b{color:var(--ink)}
+.contrast .ic{width:15px;height:15px;color:var(--amber);margin-top:1px}
+.tags{display:flex;flex-wrap:wrap;gap:7px;padding:12px 16px 2px}
+.tag{font-size:11px;font-weight:700;padding:5px 10px;border-radius:8px;background:#eef2f7;color:var(--ink-2);
+  display:flex;align-items:center;gap:5px}
+.tag.ci{background:var(--blue-l);color:var(--blue)}
+.ai-fix{padding:12px 16px}
+.ai-fix h4{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);
+  margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.ai-fix h4 .ic{width:15px;height:15px;color:var(--ok)}
+.steps{list-style:none;display:flex;flex-direction:column;gap:9px}
+.steps li{display:flex;gap:11px;font-size:13.5px;align-items:flex-start}
+.steps li b{flex:none;width:22px;height:22px;border-radius:7px;background:var(--yellow);color:var(--blue);font-size:11px;
+  display:grid;place-items:center;font-weight:900;margin-top:1px}
+.ai-actions{display:flex;gap:9px;padding:4px 16px 16px}
+.ai-actions button{flex:1;border-radius:12px;padding:13px;font:inherit;font-weight:800;font-size:13.5px;
+  cursor:pointer;border:1.5px solid var(--line);background:#fff;color:var(--ink);transition:.16s}
+.ai-actions .solved{background:var(--ok);color:#fff;border-color:var(--ok)}
+.ai-actions .escalate{background:var(--blue);color:#fff;border-color:var(--blue)}
+.ai-actions .escalate:hover{background:var(--blue-d)}
+.gate-note{margin:2px 16px 0;font-size:11.5px;color:var(--ink-2);display:flex;align-items:flex-start;gap:7px;
+  background:#fafbfd;border:1px dashed var(--line);border-radius:10px;padding:9px 11px}
+.gate-note .ic{width:14px;height:14px;color:var(--blue);margin-top:1px;flex:none}
+.sent-card{margin:14px 16px 4px;background:linear-gradient(180deg,var(--blue-l),#fff);border:1px solid #cfe0f7;
+  border-radius:13px;padding:14px 15px;display:flex;align-items:flex-start;gap:12px}
+.sent-card .sc-ic{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;
+  background:var(--blue);color:#fff}
+.sent-card .sc-ic .ic{width:18px;height:18px;color:#fff}
+.sent-card h4{font-size:14px;font-weight:800;margin-bottom:3px}
+.sent-card p{font-size:12px;color:var(--ink-2);line-height:1.45}
+.sent-card .tkid{font-family:'Archivo';font-weight:800;color:var(--blue)}
+.rate{margin:6px 16px 0;border-top:1px solid var(--line);padding:13px 0 2px}
+.rate .rl{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);
+  margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.rate .rl .ic{width:14px;height:14px;color:var(--blue)}
+.stars{display:flex;gap:6px}
+.stars button{background:none;border:none;cursor:pointer;padding:2px;line-height:0;color:#d6dde6;transition:.12s;font:inherit}
+.stars button .ic{width:26px;height:26px;stroke-width:1.6}
+.stars button:hover,.stars button.on{color:var(--yellow-d)}
+.stars button.on .ic{fill:var(--yellow)}
+.rate.done .stars{pointer-events:none}
+.rate .thanks{font-size:12px;color:var(--ok);font-weight:700;margin-top:8px;display:none;align-items:center;gap:6px}
+.rate.done .thanks{display:flex}
+.rate .thanks .ic{width:14px;height:14px}
+.learned{margin:0 16px 0;background:var(--ok-l);border:1px solid #bfe3d2;border-radius:11px;
+  padding:9px 12px;font-size:11.5px;color:#0a6b46;display:flex;align-items:center;gap:9px;font-weight:600}
+.learned .ic{width:15px;height:15px;color:var(--ok);flex:none}
+.learned b{font-family:'Archivo';font-weight:800;color:var(--ok)}
+.ai-skeleton{padding:22px 16px;display:flex;flex-direction:column;gap:12px}
+.sk{height:14px;border-radius:7px;background:linear-gradient(90deg,#eef1f6 25%,#e1e6ee 37%,#eef1f6 63%);
+  background-size:400% 100%;animation:sh 1.3s infinite}
+.sk.w40{width:40%}.sk.w70{width:70%}.sk.w90{width:90%}
+@keyframes sh{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.ai-think{font-size:12.5px;color:var(--blue);font-weight:700;display:flex;align-items:center;gap:9px;padding:0 16px 4px}
+.spin{width:15px;height:15px;border:2px solid var(--blue-l);border-top-color:var(--blue);border-radius:50%;animation:rot .7s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ---- QUESTIONNAIRE ---- */
+.qform-card{background:var(--card);border:1.5px solid var(--yellow);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+.qform-top{padding:14px 16px;background:linear-gradient(135deg,var(--blue) 0%,var(--blue-d) 100%);display:flex;align-items:center;gap:11px}
+.qform-spark{width:36px;height:36px;border-radius:10px;background:var(--yellow);display:grid;place-items:center;flex:none}
+.qform-spark svg{width:18px;height:18px;fill:none;stroke:var(--blue);stroke-width:2;stroke-linecap:round}
+.qform-top h3{font-family:'Archivo';font-size:15px;font-weight:900;color:#fff;margin-bottom:2px}
+.qform-top p{font-size:11.5px;color:rgba(255,255,255,.7)}
+.qform-body{padding:16px}
+.qform-notice{font-size:12px;color:var(--ink-2);background:var(--yellow-ll);border:1px solid var(--yellow);
+  border-radius:10px;padding:10px 12px;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px;line-height:1.5}
+.qform-notice strong{color:var(--blue)}
+.q-item{margin-bottom:14px}
+.q-item label{font-size:12.5px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.q-num{width:20px;height:20px;border-radius:6px;background:var(--blue);color:#fff;font-size:11px;font-weight:900;
+  display:inline-flex;align-items:center;justify-content:center;flex:none}
+.q-item textarea{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;
+  font-size:13px;resize:none;background:#fafbfd;transition:.15s;height:60px}
+.q-item textarea:focus{outline:none;border-color:var(--blue);background:#fff;box-shadow:0 0 0 3px rgba(0,80,170,.1)}
+.qform-actions{display:flex;gap:9px;margin-top:6px}
+.btn-submit-q{flex:1;background:var(--yellow);color:var(--blue);border:none;border-radius:12px;
+  padding:14px;font:inherit;font-weight:900;font-size:14px;cursor:pointer;transition:.18s;
+  box-shadow:0 4px 12px rgba(255,216,0,.35);display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-submit-q:hover{background:var(--yellow-d);transform:translateY(-1px);box-shadow:0 6px 16px rgba(255,216,0,.45)}
+.btn-submit-q:disabled{opacity:.6;cursor:wait;transform:none}
+.btn-submit-q .ic{stroke:var(--blue)}
+.btn-skip-q{background:#fff;color:var(--ink-2);border:1.5px solid var(--line);border-radius:12px;
+  padding:14px 16px;font:inherit;font-weight:700;font-size:13px;cursor:pointer;transition:.16s}
+.btn-skip-q:hover{border-color:var(--blue);color:var(--blue)}
+
+/* ---- RECENT ---- */
+.recent-block{margin:22px 0 8px}
+.block-head{font-size:12px;font-weight:800;color:var(--ink-2);margin-bottom:11px;text-transform:uppercase;letter-spacing:.06em;
+  display:flex;align-items:center;gap:7px}
+.block-head::before{content:'';width:14px;height:3px;background:var(--yellow);border-radius:2px;display:inline-block}
+.my-tickets{display:flex;flex-direction:column;gap:9px}
+.mini-tk{background:var(--card);border:1.5px solid var(--line);border-radius:13px;padding:12px 14px;display:flex;align-items:center;gap:11px;
+  transition:.15s}
+.mini-tk:hover{border-color:var(--blue-ll)}
+.mini-tk .pip{width:10px;height:10px;border-radius:50%;flex:none}
+.mini-tk .info{flex:1;min-width:0}
+.mini-tk .info strong{font-size:13px;font-weight:700;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-tk .info span{font-size:11.5px;color:var(--ink-2)}
+.st{font-size:10.5px;font-weight:800;padding:4px 9px;border-radius:7px;flex:none}
+.st.open{background:var(--blue-l);color:var(--blue)}.st.progress{background:var(--amber-l);color:var(--amber)}
+.st.resolved{background:var(--ok-l);color:var(--ok)}
+.empty{text-align:center;color:var(--ink-2);font-size:13px;padding:22px;background:var(--card);border:1.5px dashed var(--line);border-radius:13px}
+
+/* ---- TECH ---- */
+.tech-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.tech-head h2,.dash-head h2{font-family:'Archivo';font-size:24px;font-weight:900;letter-spacing:-.02em}
+.tech-head p,.dash-head p{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+.seg{display:flex;background:#e9edf3;border-radius:10px;padding:3px;gap:2px}
+.seg-btn{border:none;background:none;font:inherit;font-size:11.5px;font-weight:700;color:var(--ink-2);
+  padding:8px 12px;border-radius:8px;cursor:pointer;transition:.15s}
+.seg-btn.active{background:#fff;color:var(--blue);box-shadow:0 1px 4px rgba(12,26,43,.1)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:11px;color:var(--ink-2);margin-bottom:14px}
+.legend span{display:flex;align-items:center;gap:6px}
+.sw{width:11px;height:11px;border-radius:3px;flex:none}
+.sw.crit{background:var(--red)}.sw.own{background:var(--own)}
+.tech-list{display:flex;flex-direction:column;gap:11px}
+.tk{background:var(--card);border:1.5px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);display:flex}
+.tk-rail{width:6px;flex:none}
+.tk-rail.P1{background:var(--red)}.tk-rail.P2{background:var(--amber)}
+.tk-rail.P3{background:var(--blue)}.tk-rail.P4{background:#9aa7b6}
+.tk-body{padding:14px 15px;flex:1;min-width:0}
+.tk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}
+.tk-id{font-size:11px;font-weight:700;color:var(--ink-2);font-family:'Archivo'}
+.tk-sla{font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px;background:#eef2f7;color:var(--ink-2)}
+.tk-sla.warn{background:var(--red-l);color:var(--red)}
+.tk h4{font-size:14px;font-weight:700;margin-bottom:4px;line-height:1.3}
+.tk .loc-line{font-size:11.5px;color:var(--ink-2);margin-bottom:9px}
+.tk-axes{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px}
+.cbadge{display:inline-flex;align-items:center;gap:6px;font-family:'Archivo';font-weight:800;font-size:12px;
+  padding:5px 9px;border-radius:8px;color:#fff}
+.cbadge.P1{background:var(--red)}.cbadge.P2{background:var(--amber)}
+.cbadge.P3{background:var(--blue)}.cbadge.P4{background:#9aa7b6}
+.cbadge small{font-weight:700;opacity:.85;font-family:'Hanken Grotesk';font-size:10px}
+.obadge{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-size:11.5px;color:var(--own);
+  background:var(--own-l);border:1px solid #cce6ea;padding:5px 9px;border-radius:8px}
+.obadge .ic{width:13px;height:13px}
+.diffchip{font-size:10px;font-weight:800;background:var(--yellow-ll);border:1px solid var(--yellow);color:#8a6d00;
+  padding:4px 8px;border-radius:7px;display:inline-flex;align-items:center;gap:4px}
+.tk-meta{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{font-size:10.5px;font-weight:600;background:#f1f4f8;color:var(--ink-2);padding:4px 8px;border-radius:7px;display:flex;align-items:center;gap:4px}
+.chip.rec{background:var(--red-l);color:var(--red);font-weight:700}
+.chip.dup{background:#ede9fb;color:#5b3fc4;font-weight:700}
+.tk-ai{background:linear-gradient(180deg,var(--blue-l),#f7faff);border:1px solid #dce8f8;border-radius:11px;
+  padding:10px 12px;font-size:12px;margin-bottom:10px}
+.tk-ai .lab{font-size:9.5px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;
+  display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.tk-ai .lab svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
+.tk-ai b{color:var(--ink)}
+.tk-qa{background:var(--yellow-ll);border:1px solid var(--yellow);border-radius:11px;
+  padding:10px 12px;font-size:12px;margin-bottom:10px}
+.tk-qa .lab{font-size:9.5px;font-weight:800;color:#8a6d00;text-transform:uppercase;letter-spacing:.06em;
+  display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.tk-qa .lab svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
+.tk-qa .qa-line{margin-bottom:6px;padding-bottom:6px;border-bottom:1px dashed rgba(138,109,0,.2);line-height:1.4}
+.tk-qa .qa-line:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.tk-qa .qa-line strong{display:block;font-size:11px;font-weight:700;color:#7a5f00;margin-bottom:2px}
+.tk-qa .qa-line span{display:block;font-size:12.5px;color:var(--ink);font-weight:500}
+.tk-act{display:flex;gap:8px}
+.tk-act button{flex:1;border:1.5px solid var(--line);background:#fff;font:inherit;font-weight:700;font-size:12.5px;
+  padding:11px;border-radius:10px;cursor:pointer;transition:.15s;color:var(--ink)}
+.tk-act .res{background:var(--ok);color:#fff;border-color:var(--ok)}
+.tk-act .prog{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tk-act button:hover{box-shadow:var(--shadow)}.tk.done{opacity:.7}
+.rsv{margin-top:10px;border:1px solid var(--line);border-radius:12px;padding:13px;background:#fafbfd;animation:fade .3s ease both}
+.rsv .rsv-h{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);
+  display:flex;align-items:center;gap:7px;margin-bottom:11px}
+.rsv .rsv-h .ic{width:14px;height:14px;color:var(--blue)}
+.mic-row{display:flex;align-items:center;gap:11px;margin-bottom:11px}
+.mic-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;flex:none;display:grid;place-items:center;
+  background:var(--blue);color:#fff;transition:.18s;position:relative}
+.mic-btn .ic{width:23px;height:23px;color:#fff;stroke-width:2}
+.mic-btn:hover{background:var(--blue-d)}
+.mic-btn.rec{background:var(--red);animation:micp 1.3s infinite}
+@keyframes micp{0%{box-shadow:0 0 0 0 rgba(227,0,15,.45)}70%{box-shadow:0 0 0 14px rgba(227,0,15,0)}100%{box-shadow:0 0 0 0 rgba(227,0,15,0)}}
+.mic-tip{font-size:12px;color:var(--ink-2);line-height:1.4}
+.mic-tip b{color:var(--ink)}
+.rsv textarea{width:100%;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;
+  font-size:13px;resize:vertical;background:#fff;min-height:64px;transition:.15s}
+.rsv textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 4px rgba(0,80,170,.1)}
+.rsv .ai-clean{margin-top:10px;background:linear-gradient(180deg,var(--blue-l),#f7faff);border:1px solid #dce8f8;
+  border-radius:10px;padding:10px 12px;font-size:12.5px;display:none}
+.rsv .ai-clean.show{display:block;animation:fade .3s ease both}
+.rsv .ai-clean .lab{font-size:9.5px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;
+  display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.rsv .ai-clean .lab svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
+.rsv .cc-row{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:12px;color:var(--ink-2)}
+.rsv select{flex:1;border:1px solid var(--line);border-radius:9px;padding:9px 10px;font:inherit;font-size:12px;
+  font-weight:600;color:var(--ink);background:#fff}
+.rsv .rsv-act{display:flex;gap:8px;margin-top:12px}
+.rsv .rsv-act button{flex:1;border-radius:10px;padding:11px;font:inherit;font-weight:800;font-size:12.5px;
+  cursor:pointer;border:1.5px solid var(--line);background:#fff;color:var(--ink);transition:.15s}
+.rsv .rsv-act .ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+.rsv .rsv-act .ok:disabled{opacity:.55;cursor:not-allowed}
+.tk-sol{background:var(--ok-l);border:1px solid #bfe3d2;border-radius:11px;padding:10px 12px;font-size:12.5px;
+  color:#0a5238;margin-bottom:10px;line-height:1.5}
+.tk-sol .lab{font-size:9.5px;font-weight:800;color:var(--ok);text-transform:uppercase;letter-spacing:.06em;
+  display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.tk-sol .lab svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2}
+.tk-sol .lab .mic-flag{margin-left:auto;background:var(--ok);color:#fff;border-radius:6px;padding:2px 7px;
+  font-size:9px;display:flex;align-items:center;gap:4px}
+
+/* ---- DASHBOARD ---- */
+.dash-head{margin-bottom:18px}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:16px}
+.kpi{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.kpi::after{content:"";position:absolute;right:-14px;top:-14px;width:58px;height:58px;border-radius:50%;background:var(--yellow-l);opacity:.8}
+.kpi .kv{font-family:'Archivo';font-size:28px;font-weight:900;letter-spacing:-.02em;position:relative;line-height:1}
+.kpi .kl{font-size:11.5px;color:var(--ink-2);font-weight:600;margin-top:6px;position:relative}
+.kpi .kt{font-size:10.5px;font-weight:800;margin-top:8px;display:inline-flex;align-items:center;gap:4px;position:relative}
+.kt.up{color:var(--ok)}.kt.down{color:var(--red)}
+.panel{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:800;margin-bottom:13px}
+.panel .muted{color:var(--ink-2);font-size:12px;margin-bottom:11px}
+.btn-mini{border:none;background:var(--yellow);color:var(--blue);font:inherit;font-weight:800;font-size:12px;
+  padding:7px 14px;border-radius:9px;cursor:pointer;transition:.15s;box-shadow:0 2px 8px rgba(255,216,0,.3)}
+.btn-mini:hover{background:var(--yellow-d)}.btn-mini:disabled{opacity:.6;cursor:wait}
+.gap-list{display:flex;flex-direction:column;gap:9px}
+.gap-row{border:1.5px solid var(--line);border-radius:11px;padding:11px 12px;display:flex;align-items:center;gap:11px}
+.gap-row .gx{flex:1;min-width:0}
+.gap-row .gx strong{font-size:12.5px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gap-row .gx span{font-size:11px;color:var(--ink-2)}
+.prio-move{display:flex;align-items:center;gap:6px;font-family:'Archivo';font-weight:800;font-size:11px;flex:none}
+.p-old{background:#eef2f7;color:var(--ink-2);padding:3px 7px;border-radius:6px}
+.p-new{background:var(--red);color:#fff;padding:3px 7px;border-radius:6px}
+.bars{display:flex;flex-direction:column;gap:11px}
+.bar-row{display:flex;align-items:center;gap:11px;font-size:12px}
+.bar-row .bn{width:108px;font-weight:600;color:var(--ink-2);flex:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;height:10px;background:#eef1f6;border-radius:6px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--blue),#3a86e0);width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.bar-row .bv{width:22px;text-align:right;font-weight:800;font-family:'Archivo';flex:none}
+.predict-body{font-size:13px}
+.risk{border:1.5px solid var(--line);border-radius:12px;padding:13px;margin-top:10px;display:flex;gap:12px;animation:fade .4s ease both}
+.risk .rl{width:5px;border-radius:4px;flex:none}
+.risk.high .rl{background:var(--red)}.risk.med .rl{background:var(--amber)}.risk.low .rl{background:var(--ok)}
+.risk .rt{font-weight:800;font-size:13px;display:flex;justify-content:space-between;gap:8px;margin-bottom:5px}
+.risk .rt em{font-style:normal;font-size:10px;font-weight:800;padding:3px 8px;border-radius:6px}
+.risk.high .rt em{background:var(--red-l);color:var(--red)}.risk.med .rt em{background:var(--amber-l);color:var(--amber)}
+.risk.low .rt em{background:var(--ok-l);color:var(--ok)}
+.risk .rd{font-size:12px;color:var(--ink-2);line-height:1.5}.risk .rd b{color:var(--ink)}
+
+/* ---- TABBAR ---- */
+.tabbar{position:absolute;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:3px solid var(--yellow);
+  padding:9px 8px calc(9px + env(safe-area-inset-bottom));z-index:20}
+.tab{flex:1;border:none;background:none;font:inherit;display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:8px 0;color:var(--ink-2);cursor:pointer;position:relative;transition:.15s;border-radius:10px}
+.tab .ic{width:22px;height:22px}.tab span{font-size:10.5px;font-weight:700}.tab.active{color:var(--blue)}
+.tab.active span{color:var(--blue);font-weight:800}
+.tab .badge{position:absolute;top:2px;right:50%;transform:translateX(20px);background:var(--red);color:#fff;
+  font-size:9.5px;font-weight:800;min-width:17px;height:17px;border-radius:9px;display:none;align-items:center;justify-content:center;padding:0 4px}
+.tab .badge.show{display:flex}
+
+/* ---- TOAST ---- */
+.toast{position:fixed;left:50%;bottom:30px;transform:translate(-50%,80px);background:var(--blue);color:#fff;
+  padding:13px 20px;border-radius:13px;font-size:13px;font-weight:600;box-shadow:0 14px 30px rgba(0,40,100,.3);
+  opacity:0;transition:.35s cubic-bezier(.2,.9,.2,1);z-index:50;display:flex;align-items:center;gap:9px;max-width:88%}
+.toast.show{transform:translate(-50%,0);opacity:1}
+.toast .ic{width:17px;height:17px;color:var(--yellow)}
+</style>
+
+<script>
+(function(){
+  "use strict";
+  var $=function(s){return document.querySelector(s)};
+  var $$=function(s){return Array.prototype.slice.call(document.querySelectorAll(s))};
+  var AP=String.fromCharCode(39);
+
+  var CATS=[
+    {id:'caisse', ci:'Checkout - Standard VT [LDL - FR]', n:'Caisse / KS', icon:'<path d="M3 9h18v11H3z"/><path d="M7 9V5h10v4"/><path d="M7 14h2m4 0h4"/>'},
+    {id:'bo', ci:'ST-BO Server', n:'Serveur BO / SPM', icon:'<rect x="4" y="3" width="16" height="7" rx="1"/><rect x="4" y="14" width="16" height="7" rx="1"/><path d="M8 6.5h.01M8 17.5h.01"/>'},
+    {id:'mobi', ci:'ST-MDE', n:'MOBI / Mobile Office', icon:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>'},
+    {id:'wifi', ci:'ST-Customer WLAN Hardware', n:'Wifi client', icon:'<path d="M5 13a10 10 0 0 1 14 0"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><circle cx="12" cy="20" r="1"/>'},
+    {id:'reseau', ci:'ST-Network', n:'Réseau / Internet', icon:'<rect x="3" y="14" width="18" height="6" rx="1"/><path d="M7 17h.01M12 14V8M12 8a3 3 0 1 0-3-3"/>'},
+    {id:'imprimante', ci:'ST-Printer', n:'Imprimante ticket', icon:'<path d="M6 9V3h12v6"/><rect x="4" y="9" width="16" height="8" rx="1"/><path d="M8 17h8v4H8z"/>'}
+  ];
+  var catName=function(id){var c=CATS.filter(function(x){return x.id===id})[0];return c?c.n:'Autre'};
+  var catCI=function(id){var c=CATS.filter(function(x){return x.id===id})[0];return c?c.ci:'ST-Other'};
+
+  var OWNERS={
+    n1:{n:'Support N1 — Hotline',ic:'<path d="M3 5a2 2 0 0 1 2-2h2l2 4-2 1a12 12 0 0 0 6 6l1-2 4 2v2a2 2 0 0 1-2 2A16 16 0 0 1 3 5Z"/>'},
+    n2:{n:'Support N2 / Infra',ic:'<path d="m14 7 3 3M5 19 16 8l-3-3L2 16v3h3Z"/>'},
+    ext:{n:'Maintenance externe (site)',ic:'<path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>'},
+    elec:{n:'Électricien — Non-IT',ic:'<path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/>'},
+    dr:{n:'DR / RVS — Non-IT',ic:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'}
+  };
+  var ownName=function(o){return (OWNERS[o]||OWNERS.n1).n};
+
+  var KB={
+    caisse:['Faites un reboot électrique de la caisse (éteindre 10 s, rallumer).','Vérifiez le câble réseau RJ45 derrière l'+AP+'UC de la caisse.','Patientez le rechargement du TPOS, puis rouvrez la caisse.'],
+    bo:['NE coupez PAS le serveur si le SPM est offline.','Vérifiez que les baies sont alimentées (voyants) et le disjoncteur du TGBT.','Notez l'+AP+'heure exacte de début et attendez la consigne de reboot STS.'],
+    mobi:['Relancez l'+AP+'application via EMS Launcher sur le MOBI.','Faites un Reset Client de l'+AP+'application (FWWS).','Purge statique : retirez la batterie 10 s, remettez, laissez charger.'],
+    wifi:['Redémarrez le routeur SFR (vérifiez les voyants Power / Internet).','Testez sur Android ET iOS pour cibler la panne.','Oubliez le réseau Wifi puis reconnectez-vous.'],
+    reseau:['Vérifiez les voyants des routeurs opérateur (vert fixe).','Redémarrez la box / le routeur concerné.','Testez sur un autre poste pour isoler la panne.'],
+    imprimante:['Ouvrez le capot et retirez le papier coincé.','Réinsérez correctement le rouleau de papier.','Relancez une impression test.']
+  };
+
+  var NOW=Date.now(),H=3600000;
+  var SEED=[
+    {id:'INC13210111',ci:'bo',store:'1549',city:'SAINT POL SUR MER',dr:'DR13',
+     short:'Plus de réseau en SPM suite à coupure de courant',
+     desc:'Plus de Wifi ni de réseau dans le SPM suite à une coupure de courant. Caisses offline.',
+     snPrio:'P3',crit:'P1',critReason:'Magasin entièrement à l'+AP+'arrêt : encaissement impossible, perte de CA directe.',
+     owner:'elec',status:'progress',close:'',sla:NOW+1*H,rec:1,dup:null,t:NOW-2*H,
+     ai:'Coupure électrique → STS / VM INF offline. Geste IT : reboot STS après retour courant. Cause hors IT (électricien) mais criticité métier maximale → escalade + communication magasin.'},
+    {id:'INC13188915',ci:'caisse',store:'478',city:'EU',dr:'DR13',
+     short:'KS2 et KS4 offline',
+     desc:'Les caisses 2 et 4 sont offline. Câble réseau vérifié, redémarrage x2, toujours pas de réseau.',
+     snPrio:'P2',crit:'P1',critReason:'Plusieurs caisses HS en simultané : files d'+AP+'attente, capacité d'+AP+'encaissement fortement réduite.',
+     owner:'n2',status:'open',close:'',sla:NOW+3*H,rec:2,dup:null,t:NOW-3*H,
+     ai:'Corrélé à perte réseau back-office. KB : vérifier switch caisses + câble derrière UC, sinon escalade N2 / inter technicien.'},
+    {id:'INC13202881',ci:'caisse',store:'4314',city:'SAINT RENAN',dr:'DR15',
+     short:'KS3 — chèque non garanti récurrent',
+     desc:'Le chèque ne passe pas, message « non garanti » sur plusieurs chèques en caisse 3.',
+     snPrio:'P2',crit:'P2',critReason:'Une caisse partiellement bloquée sur le paiement chèque : gêne l'+AP+'encaissement.',
+     owner:'n1',status:'progress',close:'',sla:NOW+5*H,rec:3,dup:null,t:NOW-6*H,
+     ai:'Logs TPE « NON GARANTI » récurrents. KB : test croisé sur une autre caisse, vérifier liaison TPE, surveiller récurrence.'},
+    {id:'INC13182943',ci:'caisse',store:'3270',city:'SAINT MARCEL',dr:'DR11',
+     short:'KS6 — GK application not running (alerte Nagios)',
+     desc:'Alerte monitoring Nagios : CRITICAL - GK application not running sur la caisse 6.',
+     snPrio:'P3',crit:'P2',critReason:'1 caisse hors service détectée automatiquement : à traiter avant ouverture pour ne pas réduire la capacité.',
+     owner:'n1',status:'resolved',close:'Software / Application Issue',sla:NOW-20*H,rec:2,dup:null,t:NOW-28*H,
+     ai:'Ingestion auto depuis Nagios. KB : reboot caisse → service GK redémarre → caisse online. Résolution type éprouvée.'},
+    {id:'INC13209906',ci:'bo',store:'1687',city:'ST-GEORGES D ORQUES',dr:'DR16',
+     short:'Coupure BO — VM offline',
+     desc:'Coupure BO, VM offline, escalade siège demandée.',
+     snPrio:'P1',crit:'P1',critReason:'Back-office indisponible : caisses offline, magasin à l'+AP+'arrêt.',
+     owner:'n2',status:'resolved',close:'Software / Application Issue',sla:NOW-40*H,rec:1,dup:null,t:NOW-46*H,
+     ai:'Base de données fermée → restart DBS. KB : redémarrage VM DBS/BOS rétablit le BO. Résolu, happy call OK.'},
+    {id:'INC13217489',ci:'mobi',store:'3553',city:'LA CIOTAT',dr:'DR08',
+     short:'MOBI — error initializing local persistance (FWWS)',
+     desc:'Aucun accès à l'+AP+'application FWWS, erreur « initializing local persistence ».',
+     snPrio:'P3',crit:'P3',critReason:'1 MOBI applicatif HS, le magasin reste opérationnel : gêne modérée.',
+     owner:'n1',status:'resolved',close:'Software / Application Issue',sla:NOW-60*H,rec:5,dup:null,t:NOW-70*H,
+     ai:'Erreur persistance FWWS très récurrente. KB : Reset Client → résolu en < 5 min. Candidat automatisation (geste self-service).'},
+    {id:'INC13212552',ci:'mobi',store:'2967',city:'CORPEAU',dr:'DR12',
+     short:'MOBI — batterie gonflée',
+     desc:'La batterie a gonflé, le MOBI ne tient plus la charge.',
+     snPrio:'P3',crit:'P3',critReason:'Matériel à remplacer, pas d'+AP+'arrêt de vente : impact modéré mais sécurité batterie à traiter.',
+     owner:'ext',status:'open',close:'',sla:NOW+30*H,rec:1,dup:null,t:NOW-8*H,
+     ai:'Diagnostic confirmé. KB : swap MOBI (expédition avec échange). Hors geste support → maintenance externe sur site.'},
+    {id:'INC13215376',ci:'mobi',store:'3315',city:'LIVRY GARGAN',dr:'DR06',
+     short:'MOBI perdu',
+     desc:'Perte d'+AP+'un MOBI en magasin.',
+     snPrio:'P3',crit:'P4',critReason:'Aucun impact sur la vente : demande administrative, pas un incident IT.',
+     owner:'dr',status:'resolved',close:'Non-IT Reason',sla:NOW-50*H,rec:1,dup:'INC13215423',t:NOW-52*H,
+     ai:'Hors périmètre IT : perte matériel → redirection RVS / DR (escalade.itmag). Doublon détecté avec INC13215423.'},
+    {id:'INC13205893',ci:'wifi',store:'3150',city:'ST ESTEVE',dr:'DR22',
+     short:'Wifi client — connecté mais pas d'+AP+'accès internet',
+     desc:'Le réseau apparaît, on s'+AP+'y connecte, mais aucune connexion internet (tout le SPM).',
+     snPrio:'P2',crit:'P2',critReason:'Service client dégradé (Wifi gratuit), pas d'+AP+'arrêt de vente : impact modéré à élevé.',
+     owner:'n2',status:'resolved',close:'Resolved by Workaround',sla:NOW-30*H,rec:2,dup:null,t:NOW-34*H,
+     ai:'Routeur SFR remonte offline. KB : ajout IP publique / whitelist (workaround Cloudi-fi). Résolution type connue.'},
+    {id:'INC13153461',ci:'wifi',store:'1077',city:'PARIS',dr:'DR10',
+     short:'Wifi instable / zone non couverte — récurrent',
+     desc:'Absence de Wifi et réseau dans certaines zones, problème depuis plusieurs semaines.',
+     snPrio:'P2',crit:'P2',critReason:'Récurrence longue, gêne badgeage/outils en zones non couvertes : impact opérationnel soutenu.',
+     owner:'n2',status:'open',close:'',sla:NOW+2*H,rec:4,dup:null,t:NOW-5*H,
+     ai:'Récurrent. KB : nécessite plan d'+AP+'implantation des bornes pour analyse couverture → escalade infra réseau.'},
+    {id:'INC13164473',ci:'reseau',store:'2040',city:'SAVERDUN',dr:'DR14',
+     short:'Coupure réseau totale en SPM',
+     desc:'Plus aucun réseau en SPM. Check routeur OK, check élec OK, débranchement STS 15 min.',
+     snPrio:'P1',crit:'P1',critReason:'Coupure réseau totale : caisses, BO et MOBI hors service simultanément. Vente impossible.',
+     owner:'n2',status:'resolved',close:'Works as designed',sla:NOW-90*H,rec:1,dup:null,t:NOW-96*H,
+     ai:'Réarmement disjoncteurs + reboot routeurs opérateur. KB : check baie + alimentation avant reboot réseau.'},
+    {id:'INC13030001',ci:'imprimante',store:'2711',city:'QUISSAC',dr:'DR16',
+     short:'Imprimante ticket KS1 — code-barres incomplet (récurrent)',
+     desc:'L'+AP+'imprimante n'+AP+'imprime pas le code-barres en entier, ce qui empêche les retours.',
+     snPrio:'P3',crit:'P3',critReason:'1 caisse impactée sur les retours uniquement : gêne modérée mais récurrente x4.',
+     owner:'ext',status:'open',close:'',sla:NOW+22*H,rec:4,dup:null,t:NOW-9*H,
+     ai:'Imprimante défectueuse, récurrent x4. KB : changement imprimante (intervention sur site) → préconisé, ne plus temporiser.'}
+  ];
+
+  var MEM=null,KEY='resolvia:v2';
+  function load(){
+    return Promise.resolve().then(function(){
+      if(typeof window.storage==='undefined') throw 0;
+      return window.storage.get(KEY);
+    }).then(function(r){
+      if(r&&r.value){MEM=JSON.parse(r.value);return}
+      MEM=SEED.slice();save();
+    }).catch(function(){MEM=MEM||SEED.slice();save()});
+  }
+  function save(){try{if(typeof window.storage!=='undefined')window.storage.set(KEY,JSON.stringify(MEM));}catch(e){}}
+
+  var AI_ON=true;
+  var LAST_AI_ERROR=null;
+
+  // Extracteur JSON robuste : tolère préambule, fences markdown, accolades imbriquées
+  function extractJson(text){
+    if(!text) throw new Error('Réponse vide');
+    var s = String(text).trim();
+    // Essai direct
+    try { return JSON.parse(s); } catch(e){}
+    // Retirer fences markdown
+    var cleaned = s.replace(/```(?:json)?\s*/gi,'').replace(/```/g,'').trim();
+    try { return JSON.parse(cleaned); } catch(e){}
+    // Chercher le 1er { ... } équilibré
+    var start = cleaned.indexOf('{');
+    if(start>=0){
+      var depth=0;
+      for(var i=start;i<cleaned.length;i++){
+        if(cleaned[i]==='{') depth++;
+        else if(cleaned[i]==='}'){ depth--; if(depth===0){
+          try { return JSON.parse(cleaned.slice(start,i+1)); } catch(e){}
+          break;
+        }}
+      }
+    }
+    throw new Error('JSON non trouvé dans la réponse : '+cleaned.slice(0,150));
+  }
+
+  // Appel API Claude avec capture d'erreur détaillée
+  function callClaudeAPI(prompt, maxTokens){
+    return fetch("https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:maxTokens||1000,messages:[{role:"user",content:prompt}]})
+    }).then(function(r){
+      if(!r.ok){
+        return r.text().then(function(body){
+          var err = 'HTTP '+r.status+' '+r.statusText+' — '+body.slice(0,200);
+          throw new Error(err);
+        });
+      }
+      return r.json();
+    }).then(function(data){
+      if(data.error){
+        throw new Error('API error: '+(data.error.message||JSON.stringify(data.error)).slice(0,200));
+      }
+      var t=(data.content||[]).filter(function(b){return b.type==='text'}).map(function(b){return b.text}).join('');
+      if(!t) throw new Error('Aucun bloc texte dans la réponse');
+      return extractJson(t);
+    });
+  }
+
+  /* ======================================================
+     DICTÉE VOCALE DE LA SOLUTION (support)
+  ====================================================== */
+  var SOL_CC=['Software / Application Issue','Hardware / Asset Issue','Resolved by Workaround','Solved - Error did not appear again','Works as designed','Non-IT Reason','Duplicate Ticket'];
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  var activeRec = null;
+
+  function localSolution(raw){
+    var s=(raw||'').trim().replace(/\s+/g,' ');
+    if(s){ s=s.charAt(0).toUpperCase()+s.slice(1); if(!/[.!?]$/.test(s)) s+='.'; }
+    var l=s.toLowerCase(), cc='Software / Application Issue';
+    if(/remplac|swap|changé|changement|matériel|écran|batterie|pièce/.test(l)) cc='Hardware / Asset Issue';
+    else if(/contourn|workaround|ip publique|whitelist|provisoire|temporaire/.test(l)) cc='Resolved by Workaround';
+    else if(/revenu seul|plus reproduit|ne se reproduit|disparu|rétabli sans/.test(l)) cc='Solved - Error did not appear again';
+    else if(/électric|disjoncteur|courant|hors it|non.?it|prestataire|perdu|volé/.test(l)) cc='Non-IT Reason';
+    else if(/normal|conforme|attendu|pas un bug/.test(l)) cc='Works as designed';
+    else if(/doublon|déjà ouvert|duplicate/.test(l)) cc='Duplicate Ticket';
+    return {solution:s||'Solution non précisée.', close_code:cc};
+  }
+  function aiSolution(raw, tk){
+    var p='Tu es l'+AP+'IA support IT de Lidl. Un technicien vient de résoudre cet incident :\n'+
+      '« '+(tk.short||'')+' » (équipement '+catCI(tk.ci)+', criticité '+tk.crit+').\n'+
+      'Il décrit ORALEMENT, en langage parlé, ce qu'+AP+'il a fait : """'+raw+'"""\n\n'+
+      'Reformule en 3 à 4 phrases claires et professionnelles, à la 3e personne, pour la base de connaissance ServiceNow (champ u_solution). '+
+      'Conserve uniquement les actions techniques utiles (supprime les hésitations, « euh », répétitions), reste fidèle au propos, n'+AP+'invente aucune étape. '+
+      'Choisis le close code le plus adapté STRICTEMENT parmi : '+SOL_CC.join(' | ')+'.\n'+
+      'Réponds UNIQUEMENT en JSON strict : {"solution":"<3 à 4 phrases>","close_code":"<un des close codes listés>"}';
+    return callClaudeAPI(p, 600).then(function(o){
+      if(!o.solution) throw new Error('manque solution');
+      if(SOL_CC.indexOf(o.close_code)<0) o.close_code=localSolution(raw).close_code;
+      return o;
+    });
+  }
+
+  function closeResolvePanels(){
+    if(activeRec){try{activeRec.stop()}catch(e){} activeRec=null;}
+    $$('.rsv-slot').forEach(function(s){s.innerHTML=''});
+  }
+
+  function openResolvePanel(t, slot){
+    closeResolvePanels();
+    var sel=SOL_CC.map(function(c){return '<option'+(c===(t.close||'Software / Application Issue')?' selected':'')+'>'+c+'</option>'}).join('');
+    var micUI = SR
+      ? '<button class="mic-btn" id="mic-'+t.id+'" title="Dicter"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10a7 7 0 0 1-14 0M12 17v4M8 21h8"/></svg></button>'+
+        '<div class="mic-tip"><b>Dictez la solution</b> en 3-4 phrases — l'+AP+'IA la met en forme. Pas besoin de rédiger.</div>'
+      : '<div class="mic-tip" style="margin:0"><b>Dictée non disponible sur ce navigateur.</b> Saisissez la solution ci-dessous, l'+AP+'IA la reformulera.</div>';
+    slot.innerHTML='<div class="rsv">'+
+      '<div class="rsv-h"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10a7 7 0 0 1-14 0M12 17v4"/></svg>Clôture — décrivez ce que vous avez fait</div>'+
+      '<div class="mic-row">'+micUI+'</div>'+
+      '<textarea id="rsv-ta-'+t.id+'" placeholder="Parlez ou écrivez : ce qui a été fait pour résoudre l'+AP+'incident…"></textarea>'+
+      '<div class="ai-clean" id="rsv-clean-'+t.id+'"><div class="lab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Solution mise en forme par l'+AP+'IA — vérifiez / ajustez</div><span id="rsv-cleantxt-'+t.id+'"></span></div>'+
+      '<div class="cc-row">Close code <select id="rsv-cc-'+t.id+'">'+sel+'</select></div>'+
+      '<div class="rsv-act"><button id="rsv-cancel-'+t.id+'">Annuler</button>'+
+        '<button class="ok" id="rsv-go-'+t.id+'" disabled>Reformuler avec l'+AP+'IA</button></div>'+
+      '</div>';
+
+    var ta=$('#rsv-ta-'+t.id), go=$('#rsv-go-'+t.id), step=1, usedVoice=false;
+    function refresh(){ go.disabled = ta.value.trim().length<3; }
+    ta.oninput=refresh;
+    $('#rsv-cancel-'+t.id).onclick=function(){ closeResolvePanels(); };
+
+    if(SR){
+      var mic=$('#mic-'+t.id), recging=false, finalTxt='';
+      mic.onclick=function(){
+        if(recging){ try{activeRec&&activeRec.stop()}catch(e){} return; }
+        var rec=new SR(); activeRec=rec; rec.lang='fr-FR'; rec.interimResults=true; rec.continuous=true;
+        finalTxt=ta.value?ta.value.trim()+' ':'';
+        rec.onstart=function(){recging=true;mic.classList.add('rec');toast('Micro actif — parlez, recliquez pour arrêter.')};
+        rec.onerror=function(ev){recging=false;mic.classList.remove('rec');
+          toast(ev&&ev.error==='not-allowed'?'Micro refusé — autorisez le microphone.':'Dictée interrompue — vous pouvez écrire.');};
+        rec.onend=function(){recging=false;mic.classList.remove('rec');if(activeRec===rec)activeRec=null;refresh();};
+        rec.onresult=function(ev){
+          var interim='';
+          for(var i=ev.resultIndex;i<ev.results.length;i++){
+            var tr=ev.results[i][0].transcript;
+            if(ev.results[i].isFinal) finalTxt+=tr+' '; else interim+=tr;
+          }
+          usedVoice=true; ta.value=(finalTxt+interim).replace(/\s+/g,' ').trimStart(); refresh();
+        };
+        try{rec.start();}catch(e){toast('Impossible de démarrer le micro.');}
+      };
+    }
+
+    go.onclick=function(){
+      if(step===1){
+        if(activeRec){try{activeRec.stop()}catch(e){}}
+        var raw=ta.value.trim(); if(raw.length<3) return;
+        go.disabled=true; go.textContent='IA en cours…';
+        aiSolution(raw,t).then(function(o){AI_ON=true;netUI();return o;})
+          .catch(function(){AI_ON=false;netUI();return localSolution(raw);})
+          .then(function(o){
+            ta.value=o.solution;
+            var cc=$('#rsv-cc-'+t.id); if(SOL_CC.indexOf(o.close_code)>=0) cc.value=o.close_code;
+            var box=$('#rsv-clean-'+t.id); box.classList.add('show');
+            $('#rsv-cleantxt-'+t.id).textContent='Texte prêt pour ServiceNow. Vous pouvez encore le corriger ci-dessus avant clôture.';
+            step=2; go.disabled=false; go.textContent='Clôturer le ticket ✓';
+          });
+      } else {
+        var sol=ta.value.trim(); if(!sol){toast('La solution est vide.');return;}
+        t.status='resolved';
+        t.close=$('#rsv-cc-'+t.id).value;
+        t.solution=sol;
+        t.solvedVoice=usedVoice;
+        save();renderTech();renderMine();renderDash();updateBadge();
+        toast(t.id+' clos — solution enregistrée'+(usedVoice?' (dictée vocale)':'')+'.');
+      }
+    };
+  }
+
+  /* ======================================================
+     QUESTIONNAIRE IA — nouvelle fonctionnalité
+  ====================================================== */
+  function aiQuestions(desc, hint){
+    var catLabel = hint ? catName(hint) : 'non précisée';
+    var p = 'Tu es un assistant support IT Lidl (SPM / magasins). '+
+      'Un employé a signalé ce problème : """' + desc + '""". Catégorie suggérée : ' + catLabel + '. '+
+      'Génère exactement 3 questions courtes et ciblées pour aider l'+AP+'équipe informatique à diagnostiquer et résoudre le problème rapidement. '+
+      'Les questions doivent être pratiques : depuis quand, combien d'+AP+'appareils concernés, message d'+AP+'erreur exact, '+
+      'ce qui a déjà été tenté, contexte récent (mise à jour, coupure, orage…). '+
+      'Réponds UNIQUEMENT en JSON strict sans aucun texte ni balise : {"questions":["<question 1>","<question 2>","<question 3>"]}';
+    return callClaudeAPI(p, 500).then(function(o){
+      if(!Array.isArray(o.questions)||!o.questions.length) throw new Error('Format JSON inattendu (manque "questions")');
+      return o.questions;
+    });
+  }
+
+  function localQuestions(desc, hint){
+    var d=(desc||'').toLowerCase();
+    var qs = [
+      'Depuis quand exactement ce problème est-il apparu ?',
+      'Combien d'+AP+'appareils / caisses sont concernés ?',
+      'Avez-vous déjà essayé de redémarrer l'+AP+'équipement ?'
+    ];
+    if(hint==='caisse'||/cais|tpe|chèque/.test(d))
+      qs=[
+        'Quel est le numéro exact de la caisse concernée (ex : KS3) ?',
+        'Un message d'+AP+'erreur s'+AP+'affiche-t-il à l'+AP+'écran ? Si oui, lequel ?',
+        'Est-ce que les autres caisses fonctionnent normalement ?'
+      ];
+    else if(hint==='bo'||/bo |back.?office|spm offline|vm /.test(d))
+      qs=[
+        'Les caisses sont-elles également offline, ou seulement le back-office ?',
+        'Y a-t-il eu une coupure de courant ou un redémarrage récent du serveur ?',
+        'Les voyants de la baie serveur sont-ils allumés normalement ?'
+      ];
+    else if(hint==='wifi'||/wifi/.test(d))
+      qs=[
+        'Le problème touche-t-il uniquement le Wifi client ou aussi le réseau interne ?',
+        'Sur combien de téléphones / tablettes le Wifi ne fonctionne-t-il pas ?',
+        'Les voyants du routeur SFR sont-ils tous verts ?'
+      ];
+    else if(hint==='reseau'||/réseau|reseau|internet/.test(d))
+      qs=[
+        'La coupure réseau est-elle totale (toutes caisses) ou partielle ?',
+        'Avez-vous vérifié les voyants du routeur opérateur ? Quelle couleur ?',
+        'Y a-t-il eu un orage, une coupure courant ou des travaux récemment ?'
+      ];
+    return Promise.resolve(qs);
+  }
+
+  function getQuestions(desc, hint){
+    return aiQuestions(desc, hint).then(function(q){AI_ON=true;LAST_AI_ERROR=null;netUI();return q;})
+      .catch(function(e){
+        AI_ON=false;LAST_AI_ERROR=(e&&e.message)||String(e);
+        console.error('[ResolvIA] aiQuestions a échoué :', LAST_AI_ERROR);
+        netUI();
+        return localQuestions(desc,hint);
+      });
+  }
+
+  /* Affiche le formulaire questions */
+  var pendingQuestions = null;
+  function showQuestionnaire(questions){
+    pendingQuestions = questions;
+    var r=$('#ai-result');r.classList.remove('hidden');
+    var qHTML = questions.map(function(q,i){
+      return '<div class="q-item">'+
+        '<label><span class="q-num">'+(i+1)+'</span>'+q+'</label>'+
+        '<textarea id="qa-'+(i)+'" placeholder="Votre réponse…" rows="2"></textarea>'+
+      '</div>';
+    }).join('');
+    r.innerHTML='<div class="qform-card">'+
+      '<div class="qform-top">'+
+        '<div class="qform-spark"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M6.3 6.3l2.1 2.1M15.6 15.6l2.1 2.1M15.6 6.3l-2.1 2.1M8.4 15.6l-2.1 2.1"/></svg></div>'+
+        '<div><h3>L'+AP+'IA a besoin de précisions</h3><p>Pour un ticket précis et une résolution plus rapide</p></div>'+
+      '</div>'+
+      '<div class="qform-body">'+
+        '<div class="qform-notice">'+
+          '<svg style="width:15px;height:15px;flex:none;margin-top:1px;fill:none;stroke:#c47a00;stroke-width:2;stroke-linecap:round" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>'+
+          'Répondez en quelques mots — ces précisions permettront à l'+AP+'équipe IT de <strong>corriger le problème plus vite</strong>.'+
+        '</div>'+
+        qHTML+
+        '<div class="qform-actions">'+
+          '<button class="btn-submit-q" id="btn-submit-q">'+
+            'Lancer l'+AP+'analyse complète'+
+            '<svg viewBox="0 0 24 24" class="ic" style="width:16px;height:16px"><path d="M5 12h14M13 6l6 6-6 6"/></svg>'+
+          '</button>'+
+          '<button class="btn-skip-q" id="btn-skip-q">Passer</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+    r.scrollIntoView({behavior:'smooth',block:'nearest'});
+
+    $('#btn-submit-q').onclick = function(){
+      var answers = questions.map(function(q,i){
+        var v = (($('#qa-'+i)||{}).value||'').trim();
+        return v ? {q:q, a:v} : null;
+      }).filter(function(x){return x});
+      lastAnswers = answers;
+      var enriched = 'Problème signalé : ' + lastDesc;
+      if(answers.length){
+        enriched += '\n\nPrécisions fournies par l'+AP+'employé :';
+        answers.forEach(function(x){ enriched += '\n• ' + x.q + ' → ' + x.a; });
+      }
+      lastFullDesc = enriched;
+      launchAnalysis(enriched);
+    };
+    $('#btn-skip-q').onclick = function(){
+      lastAnswers = [];
+      lastFullDesc = lastDesc;
+      launchAnalysis(lastDesc);
+    };
+  }
+
+  function showSkeletonQ(){
+    var r=$('#ai-result');r.classList.remove('hidden');
+    r.innerHTML='<div class="ai-card"><div class="ai-think"><span class="spin"></span>L'+AP+'IA prépare ses questions…</div>'+
+      '<div class="ai-skeleton"><div class="sk w90"></div><div class="sk w70"></div><div class="sk w40"></div></div></div>';
+    r.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
+  /* ======================================================
+     ANALYSE PRINCIPALE
+  ====================================================== */
+  function localAnalyze(desc,hint){
+    var d=(desc||'').toLowerCase();
+
+    // =====================================================
+    // 1. DÉTECTION D'ÉLÉMENTS PRÉCIS
+    // =====================================================
+
+    // Numéros de caisse (KS1, caisse 3…)
+    var ksRaw = d.match(/\b(?:ks|caisse)\s?(\d+)/g) || [];
+    var ksLabels = ksRaw.map(function(m){ return 'KS'+m.replace(/\D/g,''); });
+
+    // Sous-équipement DE CAISSE
+    var caisseSub=null, caisseSubLabel=null;
+    if(/\bscanner|douchette|lecture (du )?code/.test(d)){ caisseSub='scanner'; caisseSubLabel='Scanner / douchette'; }
+    else if(/\btiroir/.test(d)){ caisseSub='tiroir'; caisseSubLabel='Tiroir-caisse'; }
+    else if(/\btpe|terminal.*paiement|paiement.*cb|\bcb\b|carte bancaire/.test(d)){ caisseSub='tpe'; caisseSubLabel='TPE / paiement carte'; }
+    else if(/chèque|cheque/.test(d)){ caisseSub='cheque'; caisseSubLabel='Paiement chèque'; }
+    else if(/imprimante.*ticket|ticket (qui|ne|pas)|papier|bourrage/.test(d)){ caisseSub='ticket'; caisseSubLabel='Imprimante ticket'; }
+    else if(/\bécran|\becran|affichage|display/.test(d)){ caisseSub='ecran'; caisseSubLabel='Écran caisse'; }
+    else if(/clavier|touche/.test(d)){ caisseSub='clavier'; caisseSubLabel='Clavier caisse'; }
+    else if(/balance|pesée|peser/.test(d)){ caisseSub='balance'; caisseSubLabel='Balance'; }
+
+    // ÉQUIPEMENT HORS CAISSE (matériel magasin spécifique)
+    var nonCaisse=null, nonCaisseLabel=null;
+    if(/cam[ée]ra|vid[ée]osurveillance|cctv|enregistreur (nvr|dvr)/.test(d)){ nonCaisse='camera'; nonCaisseLabel='Caméra / vidéosurveillance'; }
+    else if(/alarme|sir[èe]ne|intrusion|t[ée]l[ée]surveil/.test(d)){ nonCaisse='alarme'; nonCaisseLabel='Alarme / intrusion'; }
+    else if(/frigo|r[ée]frig|chambre froide|cha[îi]ne du froid|vitrine r[ée]frig|cong[ée]l|surgel/.test(d)){ nonCaisse='froid'; nonCaisseLabel='Froid / réfrigération'; }
+    else if(/climatisation|\bclim\b|chauffage|cvc/.test(d)){ nonCaisse='clim'; nonCaisseLabel='Climatisation / chauffage'; }
+    else if(/[ée]clairage|lumi[èe]re|n[ée]on|ampoule|spot/.test(d)){ nonCaisse='eclairage'; nonCaisseLabel='Éclairage'; }
+    else if(/porte automatique|tourniquet|porte d[''](?:entr[ée]e|acc[èe]s)/.test(d)){ nonCaisse='porte'; nonCaisseLabel='Porte automatique'; }
+    else if(/portique|antivol|d[ée]tection vol/.test(d)){ nonCaisse='portique'; nonCaisseLabel='Portique antivol'; }
+    else if(/\bcoffre\b|d[ée]p[ôo]t nuit|monnayeur/.test(d)){ nonCaisse='coffre'; nonCaisseLabel='Coffre / dépôt'; }
+    else if(/sonorisation|musique|haut[- ]parleur|micro/.test(d)){ nonCaisse='sono'; nonCaisseLabel='Sonorisation'; }
+
+    // Message d'erreur cité
+    var errMatch = desc.match(/«\s*([^»]{3,80})\s*»|"\s*([^"]{3,80})\s*"|message\s*[:\s]+([^.\n]{5,80})|erreur\s*[:\s]+([^.\n]{5,80})/i);
+    var errMsg = errMatch ? (errMatch[1]||errMatch[2]||errMatch[3]||errMatch[4]||'').trim() : '';
+
+    // Tentatives déjà faites (tolérant aux accents manquants)
+    var alreadyTried = /d[ée]j[àa]|tent[ée]|essay[ée]|reboot[ée]|red[ée]marr[ée]/i.test(desc);
+
+    // =====================================================
+    // 2. DÉTERMINATION DU CI (peut overrider le hint)
+    // =====================================================
+    var ci=hint||'caisse';
+    if(nonCaisse){
+      // Équipement clairement hors caisse → on outrepasse le hint
+      if(nonCaisse==='camera') ci='reseau';
+      else ci='reseau'; // matériel magasin → ticket via réseau/infra par défaut
+    } else if(!hint){
+      if(caisseSub||/cais|ks\d|tpos|gk applic|tiroir|paiement/.test(d))ci='caisse';
+      else if(/spm offline|bo offline|store ?serv|\bsts\b|vm (inf|dbs|bos)|coupure bo|back.?office/.test(d))ci='bo';
+      else if(/mobi|fwws|persistance|persistence|ems launcher|pda/.test(d))ci='mobi';
+      else if(/wifi client|wifi du client|hotspot|portail captif|cgu|page web indispo/.test(d))ci='wifi';
+      else if(/imprim|ticket|papier|code.?barre|bourrage/.test(d))ci='imprimante';
+      else if(/réseau|reseau|internet|coupure réseau|routeur|sfr|barracuda/.test(d))ci='reseau';
+      else ci='caisse';
+    } else if(hint && caisseSub){
+      // Hint = caisse explicitement, équipement caisse détecté → OK on garde
+      ci='caisse';
+    }
+
+    // =====================================================
+    // 3. CRITICITÉ
+    // =====================================================
+    var crit='P3',reason='Gêne sans arrêt de vente : à traiter rapidement.';
+    if(nonCaisse==='froid'){
+      crit='P1';reason='Risque chaîne du froid — sécurité alimentaire et perte de marchandise.';
+    } else if(/coupure (de )?courant|coupure électr|toutes? les cais|plusieurs cais|spm offline|bo offline|coupure réseau totale|magasin (à l|a l).?arr|chaine du froid|chaîne du froid|tout le (spm|magasin) (offline|hs)/.test(d)){
+      crit='P1';reason='Le magasin ne peut plus vendre : impact CA direct.';
+    } else if(nonCaisse==='alarme'||nonCaisse==='coffre'){
+      crit='P2';reason='Sécurité du magasin compromise — à traiter rapidement.';
+    } else if(/cais|ks\d|tpe|paiement|chèque|cheque|wifi client|encaiss|bo |back.?office/.test(d)){
+      crit='P2';reason='Fonction commerciale partiellement bloquée.';
+    } else if(/perdu|volé|vol |perte mobi|cosmét|demande|doublon/.test(d)){
+      crit='P4';reason='Aucun impact sur la vente.';
+    }
+
+    // Affiner le crit_reason avec les éléments détectés
+    if(ksLabels.length>1) reason=ksLabels.join(' et ')+' impactées — '+reason.toLowerCase();
+    else if(ksLabels.length===1) reason=ksLabels[0]+' impactée — '+reason.toLowerCase();
+    else if(caisseSubLabel) reason=caisseSubLabel+' inopérant — '+reason.toLowerCase();
+    else if(nonCaisseLabel) reason=nonCaisseLabel+' — '+reason.toLowerCase();
+
+    // =====================================================
+    // 4. OWNER (responsable de la résolution)
+    // =====================================================
+    var owner='n1';
+    if(/coupure (de )?courant|électric|disjoncteur|onduleur|tgbt/.test(d))owner='elec';
+    else if(/perdu|volé|vol |hors périmètre|hors scope|non-it/.test(d))owner='dr';
+    else if(/swap|écran cassé|batterie gonfl|remplac|changement (imprimante|uc|matériel)|expédition/.test(d))owner='ext';
+    else if(/spm offline|bo offline|vm |store ?serv|coupure réseau|routeur|barracuda|infra|escalade n2/.test(d))owner='n2';
+
+    // Équipements magasin → owners spécifiques
+    if(nonCaisse==='camera') owner='n2';
+    else if(nonCaisse==='froid'||nonCaisse==='clim'||nonCaisse==='porte'||nonCaisse==='eclairage'||nonCaisse==='sono'||nonCaisse==='portique') owner='ext';
+    else if(nonCaisse==='alarme'||nonCaisse==='coffre') owner='dr';
+
+    // =====================================================
+    // 5. SELF-HELP — gestes adaptés à ce qui est détecté
+    // =====================================================
+    var prefix = ksLabels.length ? ksLabels[0]+' — ' : '';
+    var self_help;
+
+    // -- Sous-équipement caisse --
+    if(caisseSub==='scanner'){
+      self_help=[
+        prefix+'Vérifier le câble du scanner (USB ou série) derrière l'+AP+'UC de la caisse.',
+        'Nettoyer la vitre du scanner et tester avec un code-barres simple et bien lisible.',
+        'Débrancher/rebrancher le scanner ; si possible tester sur une autre caisse pour isoler la panne.'
+      ];
+    } else if(caisseSub==='tiroir'){
+      self_help=[
+        prefix+'Vérifier qu'+AP+'aucun objet ne bloque physiquement le tiroir-caisse.',
+        'Tester l'+AP+'ouverture manuelle avec la clé d'+AP+'urgence (sous la caisse).',
+        'Si le tiroir ne répond plus aux commandes TPOS, redémarrer la caisse complète.'
+      ];
+    } else if(caisseSub==='tpe'||caisseSub==='cheque'){
+      self_help=[
+        prefix+'Tester un autre moyen de paiement pour isoler le problème TPE.',
+        'Vérifier le câble et l'+AP+'alimentation du TPE ; tester un reset du terminal.',
+        'En cas de récurrence, basculer les clients sur une autre caisse et escalader N1.'
+      ];
+    } else if(caisseSub==='ticket'){
+      self_help=[
+        prefix+'Ouvrir le capot et vérifier qu'+AP+'il n'+AP+'y a pas de bourrage papier.',
+        'Réinsérer correctement le rouleau (face thermique vers la tête).',
+        'Lancer une impression test depuis le menu TPOS ; sinon escalader pour remplacement.'
+      ];
+    } else if(caisseSub==='ecran'){
+      self_help=[
+        prefix+'Vérifier le câble vidéo (HDMI/VGA) entre l'+AP+'écran et l'+AP+'UC.',
+        'Vérifier l'+AP+'alimentation et le bouton power de l'+AP+'écran.',
+        'Échanger avec l'+AP+'écran d'+AP+'une caisse voisine pour confirmer si l'+AP+'UC ou l'+AP+'écran est en cause.'
+      ];
+    } else if(caisseSub==='clavier'){
+      self_help=[
+        prefix+'Débrancher/rebrancher le clavier USB.',
+        'Tester avec un autre clavier (caisse voisine).',
+        'Si plusieurs touches HS, redémarrer la caisse complète.'
+      ];
+    } else if(caisseSub==='balance'){
+      self_help=[
+        prefix+'Vérifier que la balance est à zéro à vide (faire une tare).',
+        'Vérifier le câble entre la balance et l'+AP+'UC de la caisse.',
+        'Redémarrer la caisse pour réinitialiser la liaison balance.'
+      ];
+    }
+
+    // -- Équipement hors caisse --
+    else if(nonCaisse==='camera'){
+      self_help=[
+        'Localiser la caméra concernée et vérifier sa LED d'+AP+'alimentation (allumée ?).',
+        'Vérifier le câble Ethernet/PoE entre la caméra et le switch vidéo.',
+        'Si pas d'+AP+'image au NVR ou poste de visualisation, créer le ticket pour intervention site — NE PAS démonter.'
+      ];
+    } else if(nonCaisse==='alarme'){
+      self_help=[
+        'NE PAS désactiver l'+AP+'alarme sans procédure DR / RVS.',
+        'Noter les codes affichés sur la centrale (heure, zone, type d'+AP+'événement).',
+        'Contacter le télésurveilleur si déclenchement intempestif puis créer le ticket DR.'
+      ];
+    } else if(nonCaisse==='froid'){
+      self_help=[
+        'Relever la température affichée sur l'+AP+'enceinte concernée (et la noter avec l'+AP+'heure).',
+        'NE PAS modifier le thermostat — basculer les produits sensibles vers une autre enceinte si T° anormale.',
+        'Ticket P1 immédiat si >4°C en frais ou >-18°C en surgelé : appeler la maintenance frigo.'
+      ];
+    } else if(nonCaisse==='clim'){
+      self_help=[
+        'Vérifier la commande murale : température réglée et mode (chaud/froid).',
+        'Si accessible, vérifier l'+AP+'état des filtres visibles.',
+        'Créer un ticket pour la maintenance CVC — pas de geste IT possible côté magasin.'
+      ];
+    } else if(nonCaisse==='eclairage'){
+      self_help=[
+        'Identifier précisément la zone concernée (rayon, réserve, parking…).',
+        'Vérifier le disjoncteur correspondant au TGBT — NE PAS forcer si déclenchement répété.',
+        'Si néons/LEDs en panne, créer un ticket pour électricien ou maintenance bâtiment.'
+      ];
+    } else if(nonCaisse==='porte'){
+      self_help=[
+        'Vérifier qu'+AP+'aucun objet ne bloque le capteur de mouvement.',
+        'Tester l'+AP+'ouverture manuelle (clé ou manivelle de service).',
+        'NE PAS forcer mécaniquement — créer un ticket pour la maintenance portes.'
+      ];
+    } else if(nonCaisse==='portique'){
+      self_help=[
+        'Vérifier que les portiques sont sous tension (LED visible).',
+        'Si déclenchements intempestifs, désactiver temporairement et noter l'+AP+'horodatage.',
+        'Créer un ticket pour la maintenance des portiques antivol (intervention site).'
+      ];
+    } else if(nonCaisse==='coffre'){
+      self_help=[
+        'NE JAMAIS forcer l'+AP+'ouverture du coffre.',
+        'Noter l'+AP+'heure de l'+AP+'incident et le code d'+AP+'erreur affiché si présent.',
+        'Procédure DR : contacter la sécurité puis créer le ticket.'
+      ];
+    } else if(nonCaisse==='sono'){
+      self_help=[
+        'Vérifier le volume de l'+AP+'ampli central et que la source est bien sélectionnée.',
+        'Tester avec une autre source (micro / streaming) pour isoler le problème.',
+        'Si HP HS, créer un ticket pour la maintenance sonorisation.'
+      ];
+    }
+
+    // -- FALLBACK : équipement non reconnu --
+    else {
+      // On essaie d'extraire le nom de l'équipement mentionné pour ne pas donner du KB hors-sujet
+      var nounMatch = desc.match(/(?:la|le|les|l[''])\s+([\wéèêàâïîôöûüç-]{3,25}(?:\s+[\wéèêàâïîôöûüç-]{3,25})?)/i);
+      var mainNoun = nounMatch ? nounMatch[1].trim() : '';
+      // Filtrer les noms trop génériques
+      if(mainNoun && /^(magasin|caisse|spm|wifi|réseau|reseau|incident|problème|probleme|système|systeme|truc|machin)$/i.test(mainNoun)) mainNoun = '';
+
+      if(mainNoun){
+        // Conseil neutre mais référencé à l'équipement réellement mentionné — pas de KB hors-sujet
+        self_help = [
+          'Identifier précisément « '+mainNoun+' » concerné(e) et le localiser dans le magasin.',
+          'Vérifier alimentation, voyants et câbles visibles — photographier l'+AP+'équipement et tout affichage anormal.',
+          'Créer le ticket sans intervention technique — un support qualifié évaluera (geste hasardeux à éviter).'
+        ];
+      } else if(ci==='caisse'){
+        // Vraiment problème caisse générique, sans précision → KB par défaut
+        self_help = KB.caisse.slice();
+        if(ksLabels.length) self_help[0] = 'Sur '+ksLabels[0]+' : '+self_help[0];
+      } else {
+        self_help = (KB[ci]||KB.caisse).slice();
+        if(ksLabels.length) self_help[0] = 'Sur '+ksLabels[0]+' : '+self_help[0];
+      }
+    }
+
+    // Inclure message d'erreur dans la dernière étape
+    if(errMsg && self_help.length){
+      self_help[self_help.length-1] += ' (message « '+errMsg+' » à noter dans le ticket si persistant)';
+    }
+
+    // Marquer les tentatives déjà faites
+    if(alreadyTried){
+      self_help[0] = '(Tentatives déjà notées) '+self_help[0];
+    }
+
+    // =====================================================
+    // 6. SUMMARY
+    // =====================================================
+    var parts=[];
+    if(ksLabels.length) parts.push(ksLabels.join(' / '));
+    if(caisseSubLabel) parts.push(caisseSubLabel);
+    if(nonCaisseLabel) parts.push(nonCaisseLabel);
+    if(errMsg) parts.push('erreur « '+errMsg+' »');
+
+    var summary;
+    if(parts.length){
+      summary = parts.join(' · ')+' — analyse heuristique locale (IA hors ligne, basée sur les mots-clés détectés).';
+    } else {
+      summary = 'Analyse heuristique locale (IA hors ligne). Pour un diagnostic plus précis, précisez le n° de caisse, le sous-équipement ou le message d'+AP+'erreur exact.';
+    }
+
+    var dlow=(desc||'').toLowerCase();
+    var hardStop=(crit==='P1')||/coupure (de )?courant|coupure électr|panne (de )?courant|bo offline|spm offline|serveur (hs|down|offline)|coupure réseau totale|écran cassé|batterie gonfl|perdu|volé|swap|remplac/.test(dlow);
+    var resolvableBy=(owner==='n1' && !hardStop)?'user':'support';
+    var resolvableReason=(resolvableBy==='user')
+      ? 'Gestes simples réalisables en magasin par l'+AP+'employé.'
+      : 'Résolution non faisable en magasin (intervention spécialisée / externe) : envoi direct au support.';
+
+    return {ci:ci,crit:crit,crit_reason:reason,sn_prio:'P3',owner:owner,
+      resolvable_by:resolvableBy,resolvable_reason:resolvableReason,
+      summary:summary,
+      self_help:self_help,
+      close_code:(nonCaisse?'Non-IT Reason':'Software / Application Issue'),
+      eta_minutes:crit==='P1'?20:crit==='P2'?45:120,escalate:(owner!=='n1')};
+  }
+
+  function aiAnalyze(desc,hint){
+    var p='Tu es l'+AP+'IA support IT de Lidl (magasins/SPM). Analyse un incident remonté par un employé. '+
+      'Tu DOIS séparer deux notions distinctes : '+
+      '(A) la CRITICITE METIER = impact réel sur la capacité du magasin à vendre (indépendante de la catégorie et de qui répare) ; '+
+      '(B) la RESPONSABILITE DE RESOLUTION = qui doit agir. '+
+      'Une coupure de courant qui met le magasin à l'+AP+'arrêt est CRITICITE P1 même si la résolution revient à un électricien (Non-IT).\n\n'+
+
+      '=== DONNÉES DU CAS À ANALYSER ===\n'+
+      'Description ET précisions de l'+AP+'employé : """'+desc+'"""\n'+
+      (hint?('Catégorie suggérée par l'+AP+'employé : '+catName(hint)+'\n'):'')+
+
+      '\n=== RÈGLES STRICTES DE PERSONNALISATION ===\n'+
+      '1. LIS ATTENTIVEMENT la description ET les précisions (numéros de caisse, messages d'+AP+'erreur, heures, équipements, contexte). Ta réponse DOIT s'+AP+'appuyer dessus.\n'+
+      '2. INTERDIT de donner une réponse générique de catégorie. Si tu ne mentionnes aucun élément précis du cas, tu as ÉCHOUÉ.\n'+
+      '3. "summary" : cite explicitement les éléments précis fournis (n° caisse comme KS3, message d'+AP+'erreur exact, heure de début, équipement concerné). Évite « problème de caisse » générique.\n'+
+      '4. "crit_reason" : décris l'+AP+'impact réel pour CE cas (ex : « KS3 et KS5 HS sur 6 caisses = capacité d'+AP+'encaissement réduite de 33% »), pas « gêne modérée ».\n'+
+      '5. "self_help" (3 gestes) : chaque geste DOIT être adapté au cas, en utilisant les détails. Évite les listes pré-écrites.\n'+
+      '6. Si l'+AP+'employé indique avoir DÉJÀ tenté quelque chose, NE le redonne PAS en self_help — propose la suite logique.\n'+
+      '7. Si une info manque pour un geste précis, formule-le quand même de façon ciblée sur l'+AP+'élément mentionné.\n\n'+
+
+      '=== EXEMPLES BON vs MAUVAIS ===\n'+
+      'Cas : "KS3 affiche \'GK application not running\' depuis 14h, déjà rebooté 2x"\n'+
+      'MAUVAIS self_help : ["Reboot la caisse","Vérifier le câble réseau","Patienter"] (générique, redonne ce qui a été tenté)\n'+
+      'BON self_help : ["Reboot KS3 déjà tenté 2x sans succès → vérifier le statut du service GK via console TPOS","Vérifier le câble RJ45 derrière l'+AP+'UC de KS3 (mention erreur 14h)","Si GK toujours KO, escalader N2 pour redémarrage côté serveur back-office"]\n\n'+
+
+      '=== RÉFÉRENTIELS ===\n'+
+      'cmdb_ci (id) : caisse, bo, mobi, wifi, reseau, imprimante.\n'+
+      'owner (id) : n1 (hotline, gestes simples), n2 (infra/serveur/réseau), ext (maintenance externe sur site/swap), elec (électricien Non-IT), dr (DR/RVS Non-IT, perte/vol).\n'+
+      'sn_prio : priorité que prédirait l'+AP+'ancien ServiceNow (calée sur catégorie, sous-évalue les coupures/arrêts totaux : tend vers P3).\n'+
+      'crit : criticité métier réelle. P1 magasin ne peut plus vendre / chaîne du froid / sécurité. P2 fonction commerciale partiellement bloquée. P3 gêne sans arrêt de vente. P4 aucun impact.\n'+
+      'resolvable_by : "user" si un employé en magasin peut raisonnablement résoudre le problème seul avec des gestes simples (relancer une appli, reboot caisse, vérifier un câble, redémarrer un routeur, dégager un bourrage papier). "support" si la résolution N\u2019EST PAS faisable en magasin et exige une intervention spécialisée ou externe : panne matérielle (écran/batterie HS, swap), serveur/BO offline, coupure de courant, coupure réseau totale, intervention infra N2, électricien, perte/vol (DR). En cas de doute sur un impact P1 bloquant, choisis "support".\n'+
+      'resolvable_reason : 1 phrase justifiant ce choix, citant le cas.\n\n'+
+
+      'Règle d\u2019envoi : si resolvable_by = "support", le ticket part directement (ne propose pas de gestes inutiles). Si "user", fournis 3 gestes réellement actionnables en magasin.\n\n'+
+
+      'Réponds UNIQUEMENT en JSON strict, sans texte ni balises :\n'+
+      '{"ci":"<id>","crit":"P1|P2|P3|P4","crit_reason":"<phrase qui cite la situation précise>","sn_prio":"P1|P2|P3","owner":"<id>","resolvable_by":"user|support","resolvable_reason":"<1 phrase>","summary":"<diagnostic court mentionnant les détails fournis>","self_help":["<geste 1 spécifique au cas>","<geste 2 spécifique au cas>","<geste 3 spécifique au cas>"],"close_code":"<close code probable>","eta_minutes":<entier>,"escalate":true|false}';
+    return callClaudeAPI(p, 1000).then(function(o){
+      if(!o.ci||!o.crit) throw new Error('Format JSON inattendu (manque "ci" ou "crit"). Reçu : '+JSON.stringify(o).slice(0,150));
+      return o;
+    });
+  }
+
+  function analyze(desc,hint){
+    return aiAnalyze(desc,hint).then(function(r){AI_ON=true;LAST_AI_ERROR=null;netUI();return r;})
+      .catch(function(e){
+        AI_ON=false;LAST_AI_ERROR=(e&&e.message)||String(e);
+        console.error('[ResolvIA] aiAnalyze a échoué :', LAST_AI_ERROR);
+        netUI();
+        return localAnalyze(desc,hint);
+      });
+  }
+
+  function showSkeleton(){
+    var r=$('#ai-result');r.classList.remove('hidden');
+    r.innerHTML='<div class="ai-card"><div class="ai-think"><span class="spin"></span>L'+AP+'IA évalue l'+AP+'impact métier…</div>'+
+      '<div class="ai-skeleton"><div class="sk w40"></div><div class="sk w90"></div><div class="sk w70"></div><div class="sk"></div><div class="sk w70"></div></div></div>';
+    r.scrollIntoView({behavior:'smooth',block:'nearest'});
+  }
+
+  function launchAnalysis(enrichedDesc){
+    showSkeleton();
+    analyze(enrichedDesc, selCat).then(function(a){
+      $('#btn-analyze').disabled=false;
+      $('#btn-analyze').querySelector('.ba-text').textContent='Analyser';
+      showAnalysis(a, enrichedDesc);
+    });
+  }
+
+  /* ---- Apprentissage : note de satisfaction des réponses ---- */
+  var LEARN={}, LKEY='resolvia:learn:v1';
+  function loadLearn(){
+    return Promise.resolve().then(function(){
+      if(typeof window.storage==='undefined') throw 0;
+      return window.storage.get(LKEY);
+    }).then(function(r){ if(r&&r.value) LEARN=JSON.parse(r.value); })
+    .catch(function(){ LEARN=LEARN||{}; });
+  }
+  function saveLearn(){try{if(typeof window.storage!=='undefined')window.storage.set(LKEY,JSON.stringify(LEARN));}catch(e){}}
+  function sigOf(help){return (help||[]).join(' || ').slice(0,400)}
+  function bestFor(ci){
+    var arr=LEARN[ci]; if(!arr||!arr.length) return null;
+    var b=null; arr.forEach(function(e){ if(e.kind!=='triage' && e.n>0 && (!b||e.avg>b.avg)) b=e; });
+    return b;
+  }
+  function rateSolution(ci,help,score,kind){
+    if(!LEARN[ci])LEARN[ci]=[];
+    var s=sigOf(help), e=null;
+    LEARN[ci].forEach(function(x){if(x.sig===s&&x.kind===kind)e=x;});
+    if(!e){e={sig:s,help:(help||[]).slice(),avg:0,n:0,kind:kind};LEARN[ci].push(e);}
+    e.avg=(e.avg*e.n+score)/(e.n+1); e.n++; saveLearn(); return e;
+  }
+  function starsHTML(){
+    var h='';
+    for(var i=1;i<=5;i++) h+='<button data-s="'+i+'" aria-label="'+i+'"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.8 6.1 20.5l1.2-6.5L2.5 9.4l6.6-.9z"/></svg></button>';
+    return h;
+  }
+  function wireRate(scopeEl,ci,help,kind){
+    var box=scopeEl.querySelector('.rate'); if(!box) return;
+    box.querySelectorAll('.stars button').forEach(function(btn){
+      btn.onmouseenter=function(){var v=+btn.dataset.s;box.querySelectorAll('.stars button').forEach(function(b){b.classList.toggle('on',+b.dataset.s<=v)})};
+      btn.onclick=function(){
+        var v=+btn.dataset.s;
+        box.querySelectorAll('.stars button').forEach(function(b){b.classList.toggle('on',+b.dataset.s<=v)});
+        box.classList.add('done');
+        var e=rateSolution(ci,help,v,kind);
+        var th=box.querySelector('.thanks');
+        th.innerHTML='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'+
+          'Merci — réponse notée '+v+'/5. L'+AP+'IA réutilisera les mieux notées'+(e.n>1?' (moyenne '+e.avg.toFixed(1)+'/5 sur '+e.n+' avis).':'.');
+        toast('Note enregistrée — apprentissage IA mis à jour.');
+      };
+    });
+    box.querySelector('.stars').onmouseleave=function(){
+      if(box.classList.contains('done'))return;
+      box.querySelectorAll('.stars button').forEach(function(b){b.classList.remove('on')});
+    };
+  }
+  function rateBlock(label){
+    return '<div class="rate"><div class="rl"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/><circle cx="12" cy="12" r="3"/></svg>'+label+'</div>'+
+      '<div class="stars">'+starsHTML()+'</div><div class="thanks"></div></div>';
+  }
+
+  function showAnalysis(a, enrichedDesc){
+    last=a;
+    var diff = a.sn_prio && a.sn_prio!==a.crit;
+    var contrast = diff ? '<div class="contrast"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>'+
+      '<div>Le système (ServiceNow) aurait classé <b>'+a.sn_prio+'</b>. ResolvIA évalue <b>'+a.crit+'</b> sur l'+AP+'impact métier réel — écart corrigé.</div></div>' : '';
+    var ownLabel=ownName(a.owner);
+    var toSupport = (a.resolvable_by==='support');
+
+    // apprentissage : si une solution éprouvée existe pour ce cmdb_ci, on la propose
+    var learned = toSupport ? null : bestFor(a.ci);
+    var useLearned = !!(learned && learned.avg>=4 && learned.n>=1 && learned.help && learned.help.length);
+    var shownHelp = useLearned ? learned.help : (a.self_help||[]);
+
+    var head='<div class="ai-card">'+
+      '<div class="ai-top"><div class="ai-spark"><svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/><circle cx="12" cy="12" r="3"/></svg></div>'+
+      '<div><h3>Analyse IA</h3><p>'+(a.summary||'Analyse terminée.')+'</p></div></div>'+
+      '<div class="axes">'+
+        '<div class="axis crit"><div class="al"><svg class="ic" viewBox="0 0 24 24"><path d="M12 2 2 22h20L12 2Z"/><path d="M12 9v5M12 18h.01"/></svg>Criticité métier</div>'+
+          '<span class="crit-pill '+a.crit+'">'+a.crit+'</span><div class="sub">'+(a.crit_reason||'')+'</div></div>'+
+        '<div class="axis own"><div class="al"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/></svg>Responsabilité</div>'+
+          '<span class="own-tag">'+ownIcon(a.owner)+ownLabel+'</span><div class="sub">Qui agit — distinct de la criticité.</div></div>'+
+      '</div>'+contrast+
+      '<div class="tags"><span class="tag ci">'+catCI(a.ci)+'</span><span class="tag">⏱ ~'+(a.eta_minutes||30)+' min</span><span class="tag">Clôture probable : '+(a.close_code||'—')+'</span></div>';
+
+    var html;
+    if(toSupport){
+      // Non résoluble en magasin → envoi direct du ticket
+      var tk = a._tk || createTicket(true); a._tk = tk;
+      html=head+
+        '<div class="sent-card"><div class="sc-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></div>'+
+        '<div><h4>Ticket envoyé directement</h4><p>'+(a.resolvable_reason||'Ce problème ne peut pas être résolu en magasin.')+
+        ' Ticket <span class="tkid">'+tk.id+'</span> transmis à <b>'+ownName(a.owner)+'</b>'+(tk.dup?' · doublon signalé':'')+'.</p></div></div>'+
+        rateBlock('La criticité et l'+AP+'orientation étaient-elles justes ?')+
+        '<div class="ai-actions"><button class="solved" id="ai-solved">Compris, fermer</button></div></div>';
+      var r=$('#ai-result');r.innerHTML=html;r.scrollIntoView({behavior:'smooth',block:'nearest'});
+      wireRate(r,a.ci,[a.crit+'|'+a.owner],'triage');
+      $('#ai-solved').onclick=function(){r.classList.add('hidden');$('#desc').value='';selCat=null;lastDesc='';lastFullDesc='';lastAnswers=[];$$('.qcat').forEach(function(x){x.classList.remove('sel')})};
+      return;
+    }
+
+    // Résoluble par l'employé → on montre les gestes, sans bouton "ticket" immédiat (anti-abus)
+    var learnedBadge = useLearned
+      ? '<div class="learned"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>'+
+        '<div>Solution <b>éprouvée</b> par les équipes — note moyenne <b>'+learned.avg.toFixed(1)+'/5</b> sur '+learned.n+' avis. Proposée en priorité.</div></div>'
+      : '';
+    html=head+
+      '<div class="ai-fix"><h4><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>Essayez d'+AP+'abord ceci</h4></div>'+
+      learnedBadge+
+      '<div class="ai-fix" style="padding-top:6px"><ol class="steps">'+shownHelp.map(function(s,i){return '<li><b>'+(i+1)+'</b><span>'+s+'</span></li>'}).join('')+'</ol></div>'+
+      '<div class="gate-note" id="ai-gate"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>'+
+        '<span>Essayez ces gestes d'+AP+'abord. Le ticket ne s'+AP+'ouvre que si ça ne suffit pas.</span></div>'+
+      rateBlock('Cette réponse vous a-t-elle aidé ?')+
+      '<div class="ai-actions"><button class="solved" id="ai-solved">✓ Problème résolu</button>'+
+        '<button class="escalate" id="ai-fail" style="background:#fff;color:var(--ink);border-color:var(--line)">Ça n'+AP+'a pas marché</button></div>'+
+      '<div class="ai-actions" id="ai-esc-wrap" style="display:none;padding-top:0"><button class="escalate" id="ai-esc">Créer le ticket support</button></div></div>';
+    var rr=$('#ai-result');rr.innerHTML=html;rr.scrollIntoView({behavior:'smooth',block:'nearest'});
+    wireRate(rr,a.ci,shownHelp,'help');
+    $('#ai-solved').onclick=function(){rr.classList.add('hidden');$('#desc').value='';selCat=null;lastDesc='';lastFullDesc='';lastAnswers=[];$$('.qcat').forEach(function(x){x.classList.remove('sel')});toast('Top — résolu sans ticket. Charge support évitée.')};
+    $('#ai-fail').onclick=function(){
+      $('#ai-esc-wrap').style.display='flex';
+      var g=$('#ai-gate'); if(g) g.innerHTML='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg><span>Gestes tentés sans succès — vous pouvez créer le ticket support.</span>';
+      this.style.display='none';
+      $('#ai-esc').onclick=function(){createTicket(false)};
+      $('#ai-esc').scrollIntoView({behavior:'smooth',block:'nearest'});
+    };
+  }
+
+  function createTicket(silent){
+    var a=last;if(!a)return null;
+    var n='INC'+(13218000+MEM.filter(function(t){return t.mine}).length+1);
+    var sameOpen=MEM.filter(function(t){return t.ci===a.ci&&t.status!=='resolved'&&!t.mine})[0];
+    var shortDesc=lastDesc.length>54?lastDesc.slice(0,54)+'…':lastDesc;
+    var fullDesc=lastFullDesc||lastDesc;
+    var tk={id:n,ci:a.ci,store:'4012',city:'TROYES',dr:'DR15',
+      short:shortDesc,desc:fullDesc,qa:lastAnswers.slice(),
+      snPrio:a.sn_prio||'P3',crit:a.crit,critReason:a.crit_reason||'',owner:a.owner,
+      status:'open',close:'',sla:Date.now()+(a.eta_minutes||60)*60000,
+      rec:1+MEM.filter(function(t){return t.ci===a.ci}).length,
+      dup:sameOpen?sameOpen.id:null,t:Date.now(),mine:true,
+      ai:(a.summary||'')+' '+(a.crit_reason||'')+' Geste conseillé : '+((a.self_help||[]).join(' / '))};
+    MEM.push(tk);save();
+    renderMine();renderTech();renderDash();updateBadge();
+    if(silent){
+      toast('Ticket '+n+' envoyé directement · '+tk.crit+' · '+ownName(tk.owner));
+      return tk;
+    }
+    $('#ai-result').classList.add('hidden');$('#desc').value='';selCat=null;
+    lastDesc='';lastFullDesc='';lastAnswers=[];
+    $$('.qcat').forEach(function(x){x.classList.remove('sel')});
+    toast('Ticket '+n+' créé · criticité '+tk.crit+' · '+ownName(tk.owner)+(tk.dup?' · doublon signalé':''));
+    return tk;
+  }
+
+  /* ======================================================
+     BOUTON ANALYSER — nouveau flow avec questionnaire
+  ====================================================== */
+  var selCat=null,last=null,lastDesc='',lastFullDesc='',lastAnswers=[],lastLoc='';
+
+  $('#btn-analyze').onclick=function(){
+    var d=$('#desc').value.trim();
+    if(d.length<6){toast('Décrivez le problème en quelques mots.');$('#desc').focus();return}
+    lastDesc=d;lastLoc=$('#store-loc').value;
+    var b=$('#btn-analyze');b.disabled=true;b.querySelector('.ba-text').textContent='En cours…';
+    showSkeletonQ();
+    getQuestions(d, selCat).then(function(questions){
+      showQuestionnaire(questions);
+    });
+  };
+
+  /* ======================================================
+     UTILITAIRES
+  ====================================================== */
+  function aiPredict(){
+    var hist=MEM.map(function(t){return {ci:t.ci,short:t.short,crit:t.crit,snPrio:t.snPrio,status:t.status,rec:t.rec}});
+    var p='Tu es l'+AP+'IA de pilotage IT de Lidl. Historique d'+AP+'incidents (JSON): '+JSON.stringify(hist)+
+      '. En croisant la récurrence (rec), les cmdb_ci et la criticité, identifie les 3 risques de panne les plus probables à anticiper. '+
+      'Réponds UNIQUEMENT en JSON: {"risks":[{"equipment":"<équipement>","level":"high|med|low","probability":"<ex 78%>","reason":"<court>","action":"<action préventive>"}]}';
+    return callClaudeAPI(p, 1000).then(function(o){
+      if(!o.risks||!Array.isArray(o.risks)) throw new Error('Format JSON inattendu (manque "risks")');
+      return o;
+    });
+  }
+  function localPredict(){return {risks:[
+    {equipment:'MOBI — application FWWS (parc)',level:'high',probability:'84%',reason:'Erreur « local persistence » très récurrente sur plusieurs SPM.',action:'Déployer le Reset Client en self-service guidé pour supprimer ces tickets.'},
+    {equipment:'Imprimante ticket — Caisse 1 (SPM 2711)',level:'high',probability:'76%',reason:'Code-barres incomplet, récurrent x4, matériel dégradé.',action:'Planifier le remplacement avant rupture, ne plus temporiser.'},
+    {equipment:'Wifi client — SPM à récurrence élevée',level:'med',probability:'58%',reason:'Réouvertures multiples liées à la couverture des bornes.',action:'Collecter le plan d'+AP+'implantation et lancer une étude couverture.'}
+  ]}}
+
+  function pip(p){return p==='P1'?'var(--red)':p==='P2'?'var(--amber)':p==='P3'?'var(--blue)':'#9aa7b6'}
+  function toast(m){var t=$('#toast');t.innerHTML='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>'+m;t.classList.add('show');clearTimeout(t._tm);t._tm=setTimeout(function(){t.classList.remove('show')},3400)}
+  function netUI(){var p=$('#net-pill');p.classList.toggle('off',!AI_ON);$('#net-text').textContent=AI_ON?'IA active':'IA locale'}
+  function ago(t){var m=Math.round((Date.now()-t)/60000);if(m<60)return 'il y a '+m+' min';var h=Math.round(m/60);if(h<24)return 'il y a '+h+' h';return 'il y a '+Math.round(h/24)+' j'}
+  function slaTxt(t){var m=Math.round((t-Date.now())/60000);if(m<=0)return {t:'SLA dépassé',w:true};if(m<60)return {t:'SLA '+m+' min',w:m<45};var h=Math.round(m/60);return {t:'SLA '+h+' h',w:h<2}}
+  function ownIcon(o){return '<svg class="ic" viewBox="0 0 24 24">'+(OWNERS[o]||OWNERS.n1).ic+'</svg>'}
+
+  function renderCats(){
+    $('#quick-grid').innerHTML=CATS.map(function(c){
+      return '<button class="qcat" data-c="'+c.id+'"><svg class="ic" viewBox="0 0 24 24">'+c.icon+'</svg><span>'+c.n+'</span></button>';
+    }).join('');
+    $$('.qcat').forEach(function(b){b.onclick=function(){
+      var id=b.dataset.c;selCat=selCat===id?null:id;
+      $$('.qcat').forEach(function(x){x.classList.toggle('sel',x.dataset.c===selCat)});
+    }});
+  }
+
+  function renderMine(){
+    var mine=MEM.filter(function(t){return t.mine}).slice().reverse();
+    var el=$('#my-tickets');
+    if(!mine.length){el.innerHTML='<div class="empty">Aucun signalement pour le moment.</div>';return}
+    el.innerHTML=mine.map(function(t){
+      return '<div class="mini-tk"><span class="pip" style="background:'+pip(t.crit)+'"></span>'+
+        '<div class="info"><strong>'+t.short+'</strong><span>'+t.id+' · '+catName(t.ci)+' · '+ago(t.t)+'</span></div>'+
+        '<span class="st '+t.status+'">'+(t.status==='open'?'Ouvert':t.status==='progress'?'En cours':'Résolu')+'</span></div>';
+    }).join('');
+  }
+
+  var tf='open',RANK={P1:0,P2:1,P3:2,P4:3};
+  function renderTech(){
+    var list=MEM.slice();
+    if(tf==='open')list=list.filter(function(t){return t.status!=='resolved'});
+    else if(tf==='resolved')list=list.filter(function(t){return t.status==='resolved'});
+    list.sort(function(a,b){return (a.status==='resolved')-(b.status==='resolved')||RANK[a.crit]-RANK[b.crit]||b.t-a.t});
+    var open=MEM.filter(function(t){return t.status!=='resolved'}).length;
+    $('#tech-sub').textContent=open+' actif'+(open>1?'s':'')+' · triés par criticité métier';
+    var el=$('#tech-list');
+    if(!list.length){el.innerHTML='<div class="empty">Aucun ticket dans cette vue.</div>';return}
+    el.innerHTML=list.map(function(t){
+      var done=t.status==='resolved';
+      var diff=t.snPrio&&t.snPrio!==t.crit;
+      var s=slaTxt(t.sla);
+      return '<div class="tk '+(done?'done':'')+'"><div class="tk-rail '+t.crit+'"></div><div class="tk-body">'+
+        '<div class="tk-row"><span class="tk-id">'+t.id+' · '+ago(t.t)+'</span>'+
+          (done?'':'<span class="tk-sla '+(s.w?'warn':'')+' ">'+s.t+'</span>')+'</div>'+
+        '<h4>'+t.short+'</h4>'+
+        '<div class="loc-line">SPM '+t.store+' · '+t.city+' · '+t.dr+' — '+catCI(t.ci)+'</div>'+
+        '<div class="tk-axes">'+
+          '<span class="cbadge '+t.crit+'">'+t.crit+' <small>criticité</small></span>'+
+          '<span class="obadge">'+ownIcon(t.owner)+ownName(t.owner)+'</span>'+
+          (diff?'<span class="diffchip">⚠ système : '+t.snPrio+'</span>':'')+
+        '</div>'+
+        '<div class="tk-meta">'+
+          (t.rec>1?'<span class="chip rec">⟳ Récurrent ×'+t.rec+'</span>':'')+
+          (t.dup?'<span class="chip dup">⧉ Doublon '+t.dup+'</span>':'')+
+          (done&&t.close?'<span class="chip">'+t.close+'</span>':'')+
+        '</div>'+
+        (t.qa && t.qa.length ? '<div class="tk-qa"><div class="lab"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Précisions employé ('+t.qa.length+')</div>'+
+          t.qa.map(function(x){return '<div class="qa-line"><strong>'+x.q+'</strong><span>'+x.a+'</span></div>'}).join('')+
+        '</div>' : '')+
+        '<div class="tk-ai"><div class="lab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Préconisation IA · base de connaissance</div>'+
+          (t.ai||'—')+'</div>'+
+        (done && t.solution ? '<div class="tk-sol"><div class="lab"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>Solution · base de connaissance'+(t.solvedVoice?'<span class="mic-flag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px"><path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10a7 7 0 0 1-14 0M12 17v4"/></svg>dictée</span>':'')+'</div>'+t.solution+'</div>' : '')+
+        (done?'<div class="tk-act"><button disabled style="opacity:.6">✓ Clos — '+(t.close||'résolu')+'</button></div>'
+         :'<div class="tk-act">'+(t.status==='open'?'<button class="prog" data-prog="'+t.id+'">Prendre en charge</button>':'')+
+           '<button class="res" data-res="'+t.id+'">Marquer résolu</button></div>')+
+        '<div class="rsv-slot" data-slot="'+t.id+'"></div>'+
+      '</div></div>';
+    }).join('');
+    $$('[data-res]').forEach(function(b){b.onclick=function(){
+      var t=MEM.filter(function(x){return x.id===b.dataset.res})[0];
+      var slot=document.querySelector('.rsv-slot[data-slot="'+t.id+'"]');
+      if(slot && slot.innerHTML){ closeResolvePanels(); return; }
+      openResolvePanel(t, slot);
+      slot.scrollIntoView({behavior:'smooth',block:'nearest'});
+    }});
+    $$('[data-prog]').forEach(function(b){b.onclick=function(){
+      var t=MEM.filter(function(x){return x.id===b.dataset.prog})[0];
+      t.status='progress';save();renderTech();renderMine();updateBadge();toast(t.id+' pris en charge — '+ownName(t.owner)+'.');
+    }});
+  }
+  $$('#tech-filter .seg-btn').forEach(function(b){b.onclick=function(){
+    $$('#tech-filter .seg-btn').forEach(function(x){x.classList.remove('active')});
+    b.classList.add('active');tf=b.dataset.f;renderTech();
+  }});
+
+  function renderDash(){
+    var open=MEM.filter(function(t){return t.status!=='resolved'}).length;
+    var gaps=MEM.filter(function(t){return t.snPrio&&RANK[t.crit]<RANK[t.snPrio]});
+    var dups=MEM.filter(function(t){return t.dup}).length;
+    $('#kpi-grid').innerHTML=
+      '<div class="kpi"><div class="kv">'+open+'</div><div class="kl">Incidents actifs</div><div class="kt down">priorisés par impact</div></div>'+
+      '<div class="kpi"><div class="kv">'+gaps.length+'</div><div class="kl">Mispriorisations corrigées</div><div class="kt up">↑ vs système</div></div>'+
+      '<div class="kpi"><div class="kv">31<small style="font-size:13px">min</small></div><div class="kl">MTTR moyen</div><div class="kt up">↓ −42 % avec l'+AP+'IA</div></div>'+
+      '<div class="kpi"><div class="kv">'+dups+'</div><div class="kl">Doublons détectés</div><div class="kt up">charge support évitée</div></div>';
+    var gl=$('#gap-list');
+    if(!gaps.length){gl.innerHTML='<div class="empty">Aucun écart détecté.</div>'}
+    else gl.innerHTML=gaps.slice(0,4).map(function(t){
+      return '<div class="gap-row"><div class="gx"><strong>'+t.short+'</strong><span>'+t.id+' · SPM '+t.store+' · '+catName(t.ci)+'</span></div>'+
+        '<div class="prio-move"><span class="p-old">'+t.snPrio+'</span><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--ink-2)"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span class="p-new">'+t.crit+'</span></div></div>';
+    }).join('');
+    var by={};MEM.forEach(function(t){by[t.ci]=(by[t.ci]||0)+1});
+    var rows=Object.keys(by).map(function(k){return [k,by[k]]}).sort(function(a,b){return b[1]-a[1]});
+    var mx=Math.max.apply(null,rows.map(function(r){return r[1]}).concat([1]));
+    $('#bars').innerHTML=rows.map(function(r){
+      return '<div class="bar-row"><span class="bn">'+catName(r[0])+'</span><span class="bar-track"><span class="bar-fill" data-w="'+Math.round(r[1]/mx*100)+'"></span></span><span class="bv">'+r[1]+'</span></div>';
+    }).join('');
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      $$('#bars .bar-fill').forEach(function(f){f.style.width=f.dataset.w+'%'});
+    })});
+  }
+  $('#btn-predict').onclick=function(){
+    var b=$('#btn-predict');b.disabled=true;b.textContent='Analyse…';
+    $('#predict-body').innerHTML='<div class="ai-think" style="padding:6px 0"><span class="spin"></span>Croisement récurrence × résolutions × événements connexes…</div>';
+    aiPredict().then(function(p){AI_ON=true;return p}).catch(function(){AI_ON=false;return localPredict()}).then(function(p){
+      netUI();b.disabled=false;b.textContent='Relancer';
+      $('#predict-body').innerHTML='<p class="muted" style="margin-bottom:4px">'+p.risks.length+' équipements à risque identifiés :</p>'+
+        p.risks.map(function(r){return '<div class="risk '+r.level+'"><div class="rl"></div><div style="flex:1">'+
+          '<div class="rt">'+r.equipment+'<em>'+(r.probability||'')+' '+(r.level==='high'?'· élevé':r.level==='med'?'· moyen':'· faible')+'</em></div>'+
+          '<div class="rd">'+r.reason+'<br><b>Action :</b> '+r.action+'</div></div></div>';}).join('');
+    });
+  };
+
+  var ROLE={employee:'Espace magasin',tech:'Espace support',dash:'Pilotage IA'};
+  function go(v){
+    $$('.view').forEach(function(s){s.classList.toggle('hidden',s.dataset.view!==v)});
+    $$('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.go===v)});
+    $('#role-label').textContent=ROLE[v];$('#screen').scrollTop=0;
+    if(v==='tech')renderTech();if(v==='dash')renderDash();
+  }
+  $$('.tab').forEach(function(t){t.onclick=function(){go(t.dataset.go)}});
+  function updateBadge(){var n=MEM.filter(function(t){return t.status==='open'}).length;var b=$('#tab-badge');b.textContent=n;b.classList.toggle('show',n>0)}
+
+  Promise.all([load(),loadLearn()]).then(function(){renderCats();renderMine();renderTech();renderDash();updateBadge();netUI()});
+})();
+</script>
