@@ -512,6 +512,51 @@ main#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:92px}
 .resp-banner b{color:#5a0e10}
 .resp-banner .ic{width:15px;height:15px;color:var(--red);margin-top:1px}
 
+/* ====== Mini-chat de dépannage guidé ====== */
+.chat-wrap{padding:6px 16px 4px}
+.chat-head{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);display:flex;align-items:center;gap:7px;margin-bottom:11px;padding:0 2px}
+.chat-head .ic{width:14px;height:14px;color:var(--blue)}
+.chat-head em{margin-left:auto;background:var(--blue-l);color:var(--blue);font-style:normal;font-size:10px;padding:3px 8px;border-radius:6px;font-weight:700}
+.chat-feed{display:flex;flex-direction:column;gap:9px;margin-bottom:11px}
+.msg{display:flex;gap:9px;animation:msgIn .25s ease both}
+@keyframes msgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.msg .av{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;font-family:'Archivo'}
+.msg.ai .av{background:linear-gradient(135deg,var(--blue),#2a7de1)}
+.msg.ai .av svg{width:15px;height:15px;color:#fff;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.msg.user{flex-direction:row-reverse}
+.msg.user .av{background:var(--ink-2)}
+.msg .bub{max-width:78%;padding:10px 13px;border-radius:14px;font-size:13.5px;line-height:1.45}
+.msg.ai .bub{background:var(--blue-l);color:var(--ink);border-top-left-radius:5px}
+.msg.user .bub{background:var(--blue);color:#fff;border-top-right-radius:5px;font-weight:600}
+.msg.ai .bub b{color:var(--blue)}
+.msg.ai .step-num{display:inline-block;background:var(--blue);color:#fff;font-weight:800;font-size:10px;padding:2px 7px;border-radius:6px;margin-right:7px;font-family:'Archivo'}
+.chat-think{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--blue);font-weight:700;padding:4px 2px 8px}
+.chat-think .spin{width:13px;height:13px;border:2px solid var(--blue-l);border-top-color:var(--blue);border-radius:50%;animation:rot .7s linear infinite}
+.chat-actions{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px}
+.chat-btn{background:#fff;border:1.5px solid var(--blue);color:var(--blue);font:inherit;font-weight:700;font-size:12.5px;padding:9px 14px;border-radius:9px;cursor:pointer;transition:.15s;flex:1;min-width:90px}
+.chat-btn:hover{background:var(--blue-l)}
+.chat-btn.ok{background:var(--ok);color:#fff;border-color:var(--ok)}
+.chat-btn.ok:hover{background:#087548}
+.chat-btn.ko{background:#fff;color:var(--red);border-color:var(--red)}
+.chat-btn.ko:hover{background:var(--red-l)}
+.chat-btn.neutral{border-color:var(--line);color:var(--ink-2)}
+.chat-btn.neutral:hover{background:#f1f4f8}
+.chat-input{display:flex;gap:7px;align-items:flex-end}
+.chat-input textarea{flex:1;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font:inherit;font-size:13px;resize:none;background:#fff;min-height:38px;max-height:100px;transition:.15s}
+.chat-input textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,80,170,.1)}
+.chat-input button{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:0 14px;height:38px;font:inherit;font-weight:700;cursor:pointer;flex:none}
+.chat-input button:disabled{opacity:.5;cursor:not-allowed}
+.chat-footer{display:flex;gap:7px;border-top:1px solid var(--line);padding:10px 16px 4px;margin-top:6px;font-size:11px}
+.chat-footer button{background:none;border:1px solid var(--line);font:inherit;font-size:11.5px;color:var(--ink-2);padding:7px 11px;border-radius:8px;cursor:pointer;font-weight:600}
+.chat-footer button:hover{background:#f1f4f8}
+.chat-footer .escalate-link{margin-left:auto;color:var(--red);border-color:var(--red-l)}
+.solved-card{margin:10px 16px 4px;background:var(--ok-l);border:1px solid #bfe3d2;border-radius:13px;padding:14px;display:flex;gap:11px;align-items:flex-start;animation:fade .35s ease both}
+.solved-card .sc-ic{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;background:var(--ok)}
+.solved-card .sc-ic .ic{width:18px;height:18px;color:#fff}
+.solved-card h4{font-size:14px;font-weight:800;color:#0a5238;margin-bottom:3px}
+.solved-card p{font-size:12px;color:#0a6b46;line-height:1.45}
+.solved-card .saved{margin-top:7px;font-size:11px;color:#0a5238;font-style:italic}
+
 /* ====== Mobile : on retire le cadre "téléphone" et on passe plein écran ====== */
 @media (max-width:520px){
   html,body{margin:0;padding:0;background:var(--bg);overscroll-behavior-y:contain}
@@ -1418,6 +1463,248 @@ main#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:92px}
       '<div class="stars">'+starsHTML()+'</div><div class="thanks"></div></div>';
   }
 
+  /* ======================================================
+     CHAT DE DÉPANNAGE GUIDÉ — résolution interactive
+  ====================================================== */
+  // État du chat en cours pour un cas user-resolvable
+  var CHAT = null;
+  var MAX_STEPS = 6; // garde-fou : pas plus de 6 échanges avant d'escalader
+
+  function aiChatStep(payload){
+    // payload : { ci, desc, history:[{role:'ai'|'user', text}], learned:[{help:[...], avg, n}] }
+    var p = 'Tu es l'+AP+'IA support N1 de Lidl, qui guide un employé en magasin pour résoudre lui-même un incident IT, en mode CONVERSATION GUIDÉE étape par étape.\n\n'+
+      'Contexte du cas :\n'+
+      '- Équipement (cmdb_ci) : '+payload.ci+'\n'+
+      '- Description initiale : """'+payload.desc+'"""\n'+
+      (payload.learned && payload.learned.length
+        ? '- Solutions déjà notées comme efficaces par d\u2019autres magasins (priorise ces gestes si pertinent) :\n'+
+          payload.learned.map(function(l){return '  • ['+l.avg.toFixed(1)+'/5 · '+l.n+' avis] '+l.help.join(' → ')}).join('\n')+'\n'
+        : '')+
+      '\n=== HISTORIQUE DE LA CONVERSATION ===\n'+
+      payload.history.map(function(m){return (m.role==='ai'?'[IA]':'[Employé]')+' '+m.text}).join('\n')+
+      '\n\n=== RÈGLES STRICTES ===\n'+
+      '1. UNE seule étape à la fois. Ne donne JAMAIS toute la procédure d\u2019un coup. Tu poses UNE action concrète, courte, et tu attends la réponse.\n'+
+      '2. Ton chaleureux, simple, terrain (« Regarde si… », « Essaie de… »). Tu parles à un caissier, pas à un ingénieur réseau.\n'+
+      '3. Si la réponse précédente de l\u2019employé indique que ça marche → status="solved", message court de confirmation.\n'+
+      '4. Si l\u2019employé est bloqué après 4-5 étapes ou si tu ne vois pas d\u2019autre piste réaliste en magasin → status="escalate", explique pourquoi en 1 phrase, le ticket sera créé avec l\u2019historique.\n'+
+      '5. Si la réponse précédente apporte une nouvelle info qui change le diagnostic (ex : « en fait c\u2019est juste 1 tablette sur 10 ») → adapte, ne reste pas buté.\n'+
+      '6. Propose des "quick_replies" courtes (2-4 boutons : « Oui ça marche », « Toujours pareil », « Je vois pas », « Pas de voyant »...) pour faciliter la réponse, sauf si tu attends un texte précis (n° d\u2019erreur, n° de caisse).\n'+
+      '7. NE re-propose JAMAIS un geste que l\u2019employé a déjà tenté dans l\u2019historique.\n'+
+      '8. Si le cas dévie vers quelque chose qui n\u2019est PAS résoluble en magasin (matériel HS, serveur down, électricité…) → escalate immédiatement.\n\n'+
+      'Réponds UNIQUEMENT en JSON strict, sans texte ni balises :\n'+
+      '{"status":"continue|solved|escalate","message":"<la prochaine étape OU la confirmation OU l\u2019explication d\u2019escalade>","quick_replies":["<bouton court 1>","<bouton court 2>"],"hint":"<étiquette interne très courte de ce geste, pour la base de connaissance, ex : reboot routeur, vérifier câble RJ45>"}';
+    return callClaudeAPI(p, 600).then(function(o){
+      if(!o.status || !o.message) throw new Error('Format JSON incomplet');
+      return o;
+    });
+  }
+
+  function localChatStep(payload){
+    // Repli minimaliste si l'IA est hors ligne — propose les KB statiques une par une
+    var done = payload.history.filter(function(m){return m.role==='ai'}).length;
+    var kb = KB[payload.ci] || [];
+    if(done < kb.length){
+      return Promise.resolve({status:'continue',message:kb[done],quick_replies:['Oui ça marche','Toujours pareil','Je vois pas'],hint:'kb#'+done});
+    }
+    return Promise.resolve({status:'escalate',message:'Je suis à court d'+AP+'idées en mode hors ligne. Je crée le ticket pour le support.',quick_replies:[],hint:'fallback'});
+  }
+
+  function chatStep(payload){
+    return aiChatStep(payload).then(function(o){AI_ON=true;netUI();return o;})
+      .catch(function(){AI_ON=false;netUI();return localChatStep(payload);});
+  }
+
+  function renderChat(){
+    var r=$('#ai-result');r.classList.remove('hidden');
+    var stepCount = CHAT.history.filter(function(m){return m.role==='ai'}).length;
+    var hist = CHAT.history.map(function(m){
+      if(m.role==='ai'){
+        var bub='';
+        if(m.idx) bub='<span class="step-num">Étape '+m.idx+'</span>';
+        bub+=m.text;
+        return '<div class="msg ai"><div class="av"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></div><div class="bub">'+bub+'</div></div>';
+      } else {
+        return '<div class="msg user"><div class="av">'+(m.text.charAt(0).toUpperCase()||'•')+'</div><div class="bub">'+m.text+'</div></div>';
+      }
+    }).join('');
+    var pending = CHAT.waiting
+      ? '<div class="chat-think"><span class="spin"></span>L'+AP+'IA réfléchit à la prochaine étape…</div>'
+      : '';
+    var qrs = (!CHAT.waiting && CHAT.lastReplies && CHAT.lastReplies.length)
+      ? '<div class="chat-actions">'+CHAT.lastReplies.map(function(q,i){
+          var cls = /oui|ça marche|résolu|nickel|parfait/i.test(q) ? 'chat-btn ok'
+                  : /non|pareil|pas|ko|toujours/i.test(q) ? 'chat-btn ko'
+                  : 'chat-btn neutral';
+          return '<button class="'+cls+'" data-qr="'+i+'">'+q+'</button>';
+        }).join('')+'</div>'
+      : '';
+    var input = !CHAT.waiting
+      ? '<div class="chat-input">'+
+          '<textarea id="chat-ta" placeholder="…ou répondez librement (n° d'+AP+'erreur, ce que vous voyez, etc.)" rows="1"></textarea>'+
+          '<button id="chat-send">Envoyer</button>'+
+        '</div>'
+      : '';
+    var stepBadge = stepCount>0 ? '<em>Étape '+stepCount+'/'+MAX_STEPS+'</em>' : '';
+    var html = '<div class="ai-card">'+
+      '<div class="ai-top"><div class="ai-spark"><svg viewBox="0 0 24 24"><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="3"/></svg></div>'+
+        '<div><h3>Dépannage guidé</h3><p>Je te guide pas à pas. Réponds simplement après chaque étape.</p></div></div>'+
+      '<div class="chat-wrap">'+
+        '<div class="chat-head"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5z"/></svg>Conversation · '+catCI(CHAT.ci)+stepBadge+'</div>'+
+        '<div class="chat-feed">'+hist+'</div>'+
+        pending+qrs+input+
+      '</div>'+
+      '<div class="chat-footer">'+
+        '<button id="chat-reset" type="button">↺ Recommencer</button>'+
+        '<button id="chat-give-up" class="escalate-link" type="button">Je préfère créer le ticket</button>'+
+      '</div></div>';
+    r.innerHTML=html;
+    r.scrollIntoView({behavior:'smooth',block:'nearest'});
+    // câblage
+    $$('.chat-btn[data-qr]').forEach(function(btn){
+      btn.onclick=function(){ sendChatReply(CHAT.lastReplies[+btn.dataset.qr]); };
+    });
+    var ta=$('#chat-ta'), sendBtn=$('#chat-send');
+    if(ta){
+      ta.focus();
+      ta.oninput=function(){ ta.style.height='auto'; ta.style.height=Math.min(100,ta.scrollHeight)+'px'; };
+      ta.onkeydown=function(e){
+        if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); if(ta.value.trim()) sendChatReply(ta.value.trim()); }
+      };
+      sendBtn.onclick=function(){ if(ta.value.trim()) sendChatReply(ta.value.trim()); };
+    }
+    $('#chat-reset').onclick=function(){ if(confirm('Recommencer la conversation ?')) startChat(CHAT.ci, CHAT.desc, CHAT.analysis); };
+    $('#chat-give-up').onclick=function(){ giveUpChat(); };
+    // feed scroll to bottom
+    var feed=$('.chat-feed'); if(feed) feed.scrollTop = feed.scrollHeight;
+  }
+
+  function sendChatReply(text){
+    CHAT.history.push({role:'user', text:text});
+    CHAT.lastReplies=[];
+    CHAT.waiting=true;
+    renderChat();
+
+    var stepCount = CHAT.history.filter(function(m){return m.role==='ai'}).length;
+    if(stepCount >= MAX_STEPS){
+      // limite atteinte → escalade auto
+      CHAT.history.push({role:'ai', text:'On a fait le tour des gestes possibles depuis le magasin. Je transmets au support avec tout l'+AP+'historique.', idx:stepCount+1});
+      CHAT.waiting=false;
+      finalizeChat('escalate', 'Limite de '+MAX_STEPS+' étapes atteinte.');
+      return;
+    }
+
+    chatStep({
+      ci: CHAT.ci, desc: CHAT.desc,
+      history: CHAT.history,
+      learned: CHAT.learned
+    }).then(function(r){
+      CHAT.waiting=false;
+      var idx = CHAT.history.filter(function(m){return m.role==='ai'}).length + 1;
+      CHAT.history.push({role:'ai', text:r.message, idx:idx, hint:r.hint||''});
+      CHAT.lastReplies = r.status==='continue' ? (r.quick_replies||[]) : [];
+      if(r.status==='solved' || r.status==='escalate'){
+        finalizeChat(r.status, r.message);
+      } else {
+        renderChat();
+      }
+    });
+  }
+
+  function startChat(ci, desc, analysis){
+    // Récupère les top solutions apprises pour ce ci
+    var learnedArr = (LEARN[ci]||[]).filter(function(e){return e.kind==='help' && e.avg>=4 && e.help && e.help.length})
+                                     .sort(function(a,b){return b.avg-a.avg}).slice(0,3);
+    CHAT = {
+      ci: ci, desc: desc, analysis: analysis,
+      history: [],
+      lastReplies: ['Oui ça marche','Toujours pareil','Je vois pas','Pas de voyant'],
+      waiting: true,
+      learned: learnedArr
+    };
+    renderChat();
+    chatStep({ci:ci, desc:desc, history:[], learned:learnedArr}).then(function(r){
+      CHAT.waiting=false;
+      CHAT.history.push({role:'ai', text:r.message, idx:1, hint:r.hint||''});
+      CHAT.lastReplies = r.quick_replies && r.quick_replies.length ? r.quick_replies : ['Oui ça marche','Toujours pareil','Je vois pas'];
+      if(r.status==='solved'||r.status==='escalate'){
+        finalizeChat(r.status, r.message);
+      } else {
+        renderChat();
+      }
+    });
+  }
+
+  function giveUpChat(){
+    if(!CHAT) return;
+    CHAT.history.push({role:'user', text:'(L'+AP+'employé a choisi de transmettre directement au support)'});
+    finalizeChat('escalate', 'L'+AP+'employé a préféré transmettre au support sans aller au bout du dépannage guidé.');
+  }
+
+  function finalizeChat(status, finalMessage){
+    if(!CHAT) return;
+    var sequence = CHAT.history.filter(function(m){return m.role==='ai' && m.hint && m.hint!=='fallback'})
+                                .map(function(m){return m.hint || m.text.slice(0,80)});
+    if(status==='solved'){
+      // On enregistre la séquence comme solution éprouvée (notée 5/5 par construction)
+      if(sequence.length){
+        var sigKey=sigOf(sequence);
+        if(!LEARN[CHAT.ci]) LEARN[CHAT.ci]=[];
+        var entry=null;
+        LEARN[CHAT.ci].forEach(function(e){if(e.kind==='help'&&e.sig===sigKey)entry=e});
+        if(!entry){entry={sig:sigKey,help:sequence.slice(),avg:0,n:0,kind:'help'};LEARN[CHAT.ci].push(entry);}
+        entry.avg=(entry.avg*entry.n+5)/(entry.n+1); entry.n++; saveLearn();
+      }
+      // Affiche le panneau "résolu" avec notation optionnelle pour confirmer
+      var r=$('#ai-result');
+      var helpRecap = sequence.length ? sequence.map(function(s,i){return '<li><b>'+(i+1)+'</b><span>'+s+'</span></li>'}).join('') : '<li><span>Échange court — résolution immédiate</span></li>';
+      r.innerHTML='<div class="ai-card">'+
+        '<div class="solved-card"><div class="sc-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>'+
+          '<div><h4>Résolu sans ticket</h4><p>'+finalMessage+'</p>'+
+          '<div class="saved">✓ La séquence qui a marché est enregistrée dans la base de connaissance et sera reproposée pour des cas similaires.</div></div>'+
+        '</div>'+
+        '<div class="ai-fix" style="padding-top:6px"><h4 style="display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);margin-bottom:10px"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--ok)"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>Ce qui a marché</h4>'+
+          '<ol class="steps">'+helpRecap+'</ol></div>'+
+        '<div class="ai-actions"><button class="solved" id="ai-close">Compris, fermer</button></div>'+
+      '</div>';
+      $('#ai-close').onclick=function(){
+        $('#ai-result').classList.add('hidden');
+        $('#desc').value='';selCat=null;lastDesc='';lastFullDesc='';lastAnswers=[];CHAT=null;
+        $$('.qcat').forEach(function(x){x.classList.remove('sel')});
+        toast('Résolu en magasin · solution mémorisée pour la prochaine fois.');
+      };
+    } else {
+      // Escalade : on crée le ticket avec la synthèse complète
+      escalateFromChat(finalMessage, sequence);
+    }
+  }
+
+  function escalateFromChat(reason, sequence){
+    var a=last;if(!a){toast('Erreur : analyse perdue.');return;}
+    // Synthèse texte de la conversation pour le ticket
+    var convo = CHAT.history.map(function(m){
+      return (m.role==='ai'?'IA →':'Employé →')+' '+m.text;
+    }).join('\n');
+    var synth = '[Dépannage guidé tenté avant escalade]\n'+
+                'Gestes tentés : '+(sequence.length?sequence.join(' / '):'(aucun complet)')+'\n'+
+                'Motif d'+AP+'escalade : '+reason+'\n\n'+
+                '--- Conversation complète ---\n'+convo;
+    lastFullDesc = synth + '\n\n--- Description initiale ---\n' + lastDesc;
+    var tk = createTicket(true);
+    var r=$('#ai-result');
+    r.innerHTML='<div class="ai-card">'+
+      '<div class="sent-card"><div class="sc-ic"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4Z"/></svg></div>'+
+        '<div><h4>Ticket transmis au support</h4><p>'+reason+' Ticket <span class="tkid">'+tk.id+'</span> envoyé à <b>'+ownName(a.owner)+'</b> avec la synthèse complète de la conversation — le support ne repart pas de zéro.</p></div></div>'+
+      '<div class="ai-fix" style="padding-top:6px"><h4 style="font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-2);margin-bottom:10px">Gestes tentés (joints au ticket)</h4>'+
+        '<ol class="steps">'+(sequence.length?sequence.map(function(s,i){return '<li><b>'+(i+1)+'</b><span>'+s+'</span></li>'}).join(''):'<li><span>Aucun geste complet — escalade rapide.</span></li>')+'</ol></div>'+
+      '<div class="ai-actions"><button class="solved" id="ai-close">Compris, fermer</button></div>'+
+    '</div>';
+    $('#ai-close').onclick=function(){
+      $('#ai-result').classList.add('hidden');
+      $('#desc').value='';selCat=null;lastDesc='';lastFullDesc='';lastAnswers=[];CHAT=null;
+      $$('.qcat').forEach(function(x){x.classList.remove('sel')});
+    };
+  }
+
   function showAnalysis(a, enrichedDesc){
     last=a;
     var diff = a.sn_prio && a.sn_prio!==a.crit;
@@ -1464,31 +1751,8 @@ main#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:92px}
       return;
     }
 
-    // Résoluble par l'employé → on montre les gestes, sans bouton "ticket" immédiat (anti-abus)
-    var learnedBadge = useLearned
-      ? '<div class="learned"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>'+
-        '<div>Solution <b>éprouvée</b> par les équipes — note moyenne <b>'+learned.avg.toFixed(1)+'/5</b> sur '+learned.n+' avis. Proposée en priorité.</div></div>'
-      : '';
-    html=head+
-      '<div class="ai-fix"><h4><svg class="ic" viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>Essayez d'+AP+'abord ceci</h4></div>'+
-      learnedBadge+
-      '<div class="ai-fix" style="padding-top:6px"><ol class="steps">'+shownHelp.map(function(s,i){return '<li><b>'+(i+1)+'</b><span>'+s+'</span></li>'}).join('')+'</ol></div>'+
-      '<div class="gate-note" id="ai-gate"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>'+
-        '<span>Essayez ces gestes d'+AP+'abord. Le ticket ne s'+AP+'ouvre que si ça ne suffit pas.</span></div>'+
-      rateBlock('Cette réponse vous a-t-elle aidé ?')+
-      '<div class="ai-actions"><button class="solved" id="ai-solved">✓ Problème résolu</button>'+
-        '<button class="escalate" id="ai-fail" style="background:#fff;color:var(--ink);border-color:var(--line)">Ça n'+AP+'a pas marché</button></div>'+
-      '<div class="ai-actions" id="ai-esc-wrap" style="display:none;padding-top:0"><button class="escalate" id="ai-esc">Créer le ticket support</button></div></div>';
-    var rr=$('#ai-result');rr.innerHTML=html;rr.scrollIntoView({behavior:'smooth',block:'nearest'});
-    wireRate(rr,a.ci,shownHelp,'help');
-    $('#ai-solved').onclick=function(){rr.classList.add('hidden');$('#desc').value='';selCat=null;lastDesc='';lastFullDesc='';lastAnswers=[];$$('.qcat').forEach(function(x){x.classList.remove('sel')});toast('Top — résolu sans ticket. Charge support évitée.')};
-    $('#ai-fail').onclick=function(){
-      $('#ai-esc-wrap').style.display='flex';
-      var g=$('#ai-gate'); if(g) g.innerHTML='<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg><span>Gestes tentés sans succès — vous pouvez créer le ticket support.</span>';
-      this.style.display='none';
-      $('#ai-esc').onclick=function(){createTicket(false)};
-      $('#ai-esc').scrollIntoView({behavior:'smooth',block:'nearest'});
-    };
+    // Résoluble par l'employé → on lance le dépannage guidé (chat IA)
+    startChat(a.ci, enrichedDesc || lastDesc, a);
   }
 
   function createTicket(silent){
