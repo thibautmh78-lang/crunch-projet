@@ -1470,8 +1470,43 @@ main#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:92px}
   var CHAT = null;
   var MAX_STEPS = 6; // garde-fou : pas plus de 6 échanges avant d'escalader
 
+  // Empreinte normalisée d'un message pour détecter les répétitions
+  function chatFingerprint(s){
+    return (s||'').toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'') // enlève les accents
+      .replace(/[^a-z0-9]+/g,' ')                       // tout le reste → espaces
+      .replace(/\b(le|la|les|un|une|des|du|de|d|l|ou|et|a|en|sur|au|aux|ton|ta|tes|votre|vos|son|sa|ses|ce|cet|cette|ces|que|qui|quoi|si|alors|donc|maintenant|bien|bon|stp|s il te plait|essaie|essaye|essayer|peux tu|peux|tu|toi|verifie|verifies|regarde|regardes|clique|cliques|appuie|appuies|fais|faire)\b/g,' ')
+      .replace(/\s+/g,' ').trim()
+      .slice(0,140); // les ~140 premiers caractères significatifs suffisent
+  }
+  function isRepetition(newText, history){
+    var fp = chatFingerprint(newText);
+    if(!fp || fp.length<12) return false;
+    for(var i=0;i<history.length;i++){
+      if(history[i].role!=='ai') continue;
+      var prev = chatFingerprint(history[i].text);
+      if(prev===fp) return true;
+      // similarité grossière : >70% des mots significatifs en commun
+      var a=fp.split(' '), b=prev.split(' ');
+      if(a.length<3 || b.length<3) continue;
+      var common=0;
+      a.forEach(function(w){ if(b.indexOf(w)>=0) common++; });
+      var ratio = common / Math.min(a.length,b.length);
+      if(ratio>=0.55) return true;
+    }
+    return false;
+  }
+
   function aiChatStep(payload){
-    // payload : { ci, desc, history:[{role:'ai'|'user', text}], learned:[{help:[...], avg, n}] }
+    // Liste des gestes déjà tentés à NE PAS reproposer (extrait de l'historique)
+    var alreadyTried = payload.history
+      .filter(function(m){return m.role==='ai' && (m.hint||m.text)})
+      .map(function(m,i){return (i+1)+'. '+(m.hint || m.text.slice(0,100))});
+    var bannedFps = payload.history
+      .filter(function(m){return m.role==='ai'})
+      .map(function(m){return chatFingerprint(m.text).slice(0,80)})
+      .filter(function(x){return x.length>=12});
+
     var p = 'Tu es l'+AP+'IA support N1 de Lidl, qui guide un employé en magasin pour résoudre lui-même un incident IT, en mode CONVERSATION GUIDÉE étape par étape.\n\n'+
       'Contexte du cas :\n'+
       '- Équipement (cmdb_ci) : '+payload.ci+'\n'+
@@ -1479,6 +1514,9 @@ main#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:92px}
       (payload.learned && payload.learned.length
         ? '- Solutions déjà notées comme efficaces par d\u2019autres magasins (priorise ces gestes si pertinent) :\n'+
           payload.learned.map(function(l){return '  • ['+l.avg.toFixed(1)+'/5 · '+l.n+' avis] '+l.help.join(' → ')}).join('\n')+'\n'
+        : '')+
+      (alreadyTried.length
+        ? '\n=== GESTES DÉJÀ PROPOSÉS À CET EMPLOYÉ (INTERDITS DE REDIRE) ===\n'+alreadyTried.join('\n')+'\n'
         : '')+
       '\n=== HISTORIQUE DE LA CONVERSATION ===\n'+
       payload.history.map(function(m){return (m.role==='ai'?'[IA]':'[Employé]')+' '+m.text}).join('\n')+
@@ -1489,10 +1527,12 @@ main#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:92px}
       '4. Si l\u2019employé est bloqué après 4-5 étapes ou si tu ne vois pas d\u2019autre piste réaliste en magasin → status="escalate", explique pourquoi en 1 phrase, le ticket sera créé avec l\u2019historique.\n'+
       '5. Si la réponse précédente apporte une nouvelle info qui change le diagnostic (ex : « en fait c\u2019est juste 1 tablette sur 10 ») → adapte, ne reste pas buté.\n'+
       '6. Propose des "quick_replies" courtes (2-4 boutons : « Oui ça marche », « Toujours pareil », « Je vois pas », « Pas de voyant »...) pour faciliter la réponse, sauf si tu attends un texte précis (n° d\u2019erreur, n° de caisse).\n'+
-      '7. NE re-propose JAMAIS un geste que l\u2019employé a déjà tenté dans l\u2019historique.\n'+
-      '8. Si le cas dévie vers quelque chose qui n\u2019est PAS résoluble en magasin (matériel HS, serveur down, électricité…) → escalate immédiatement.\n\n'+
+      '7. ⚠️ INTERDICTION STRICTE DE RÉPÉTITION : si l\u2019employé dit que ton geste n\u2019a pas marché, tu DOIS proposer une PISTE NOUVELLE — autre cause, autre angle, autre composant. Ne reformule pas la même chose en d\u2019autres mots. Ne reviens pas en arrière sur un geste déjà listé ci-dessus. Si vraiment tu n\u2019as plus d\u2019idée terrain → escalate, c\u2019est mieux que de tourner en rond.\n'+
+      '8. Avant chaque réponse, vérifie mentalement : « ai-je déjà dit ça plus haut ? » Si oui, change d\u2019approche.\n'+
+      '9. Si le cas dévie vers quelque chose qui n\u2019est PAS résoluble en magasin (matériel HS, serveur down, électricité…) → escalate immédiatement.\n'+
+      '10. Le champ "hint" doit être UNIQUE par étape — c\u2019est l\u2019étiquette qui sert à éviter les doublons. Exemples : "reboot caisse", "vérifier RJ45", "oublier wifi", "test sur autre appareil"… NE répète JAMAIS un hint déjà listé ci-dessus.\n\n'+
       'Réponds UNIQUEMENT en JSON strict, sans texte ni balises :\n'+
-      '{"status":"continue|solved|escalate","message":"<la prochaine étape OU la confirmation OU l\u2019explication d\u2019escalade>","quick_replies":["<bouton court 1>","<bouton court 2>"],"hint":"<étiquette interne très courte de ce geste, pour la base de connaissance, ex : reboot routeur, vérifier câble RJ45>"}';
+      '{"status":"continue|solved|escalate","message":"<la prochaine étape OU la confirmation OU l\u2019explication d\u2019escalade>","quick_replies":["<bouton court 1>","<bouton court 2>"],"hint":"<étiquette interne très courte et UNIQUE de ce geste>"}';
     return callClaudeAPI(p, 600).then(function(o){
       if(!o.status || !o.message) throw new Error('Format JSON incomplet');
       return o;
@@ -1509,9 +1549,36 @@ main#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:92px}
     return Promise.resolve({status:'escalate',message:'Je suis à court d'+AP+'idées en mode hors ligne. Je crée le ticket pour le support.',quick_replies:[],hint:'fallback'});
   }
 
-  function chatStep(payload){
+  function chatStepRaw(payload){
     return aiChatStep(payload).then(function(o){AI_ON=true;netUI();return o;})
       .catch(function(){AI_ON=false;netUI();return localChatStep(payload);});
+  }
+
+  function chatStep(payload){
+    // 1er essai
+    return chatStepRaw(payload).then(function(o){
+      if(o.status!=='continue') return o;
+      if(!isRepetition(o.message, payload.history)) return o;
+      // L'IA répète : on lui renvoie une "réponse utilisateur" qui pointe la répétition
+      var retryPayload = {
+        ci: payload.ci, desc: payload.desc, learned: payload.learned,
+        history: payload.history.concat([{
+          role: 'user',
+          text: '[Système] Tu viens de répéter un geste déjà proposé. Donne une PISTE DIFFÉRENTE (autre composant, autre cause, autre angle) ou escalade si tu n\u2019as plus d\u2019idée terrain. NE reformule pas la même chose.'
+        }])
+      };
+      return chatStepRaw(retryPayload).then(function(o2){
+        if(o2.status!=='continue') return o2;
+        if(!isRepetition(o2.message, payload.history)) return o2;
+        // Toujours en boucle → escalade propre
+        return {
+          status: 'escalate',
+          message: 'Je tourne en rond et je n\u2019arrive pas à trouver une nouvelle piste résolvable depuis le magasin. Je transmets au support avec tout l\u2019historique — ils prendront le relais.',
+          quick_replies: [],
+          hint: 'escalade auto pour cause de boucle'
+        };
+      });
+    });
   }
 
   function renderChat(){
