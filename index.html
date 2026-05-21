@@ -594,7 +594,7 @@ main#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:92px}
   // pour activer la vraie IA en ligne (sinon repli local heuristique).
   // Exemple : "https://resolvia-proxy.tonpseudo.workers.dev/v1/messages"
   // ============================================================
-  var API_URL = "https://spring-cloud-1a61.thibaut-mh78.workers.dev";
+  var API_URL = "https://spring-cloud-1a61.thibaut-mh78.workers.dev/v1/messages";
 
   var CATS=[
     {id:'caisse', ci:'Checkout - Standard VT [LDL - FR]', n:'Caisse / KS', icon:'<path d="M3 9h18v11H3z"/><path d="M7 9V5h10v4"/><path d="M7 14h2m4 0h4"/>'},
@@ -1578,9 +1578,44 @@ main#screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:92px}
     var feed=$('.chat-feed'); if(feed) feed.scrollTop = feed.scrollHeight;
   }
 
+  // Détecte si l'employé exprime que c'est résolu, en parlant français de magasin
+  function isUserSolved(text){
+    var t=' '+(text||'').toLowerCase()
+      .replace(/[.,!?;:()«»"]/g,' ').replace(/\s+/g,' ').trim()+' ';
+    // Négations qui inversent le sens : "pas", "plus", "jamais", "ne ... pas", "ça ne marche pas"…
+    var neg=/ (pas|plus|jamais|aucun|aucune|rien|ni) /.test(t)
+         || / (toujours|encore) (pareil|le m[êe]me|rien) /.test(t)
+         || / ne \S+ pas /.test(t)
+         || / n['\u2019] ?\S+ pas /.test(t);
+    if(neg) return false;
+    // Expressions positives sans ambiguïté (entourées d'espaces pour gérer ç correctement)
+    var positives = ['ça marche','ca marche','cela marche','c est bon','c est ok','tout bon','nickel','parfait','réglé','regle','résolu','resolu','ça fonctionne','ca fonctionne','ça remarche','ca remarche','ça repart','ca repart','ça a marché','ca a marche','ça a fonctionné','problème résolu','probleme resolu','c est revenu','ça y est','ca y est','youpi','impec','impeccable','super','top'];
+    for(var i=0;i<positives.length;i++){
+      if(t.indexOf(' '+positives[i]+' ')>=0) return true;
+    }
+    // "oui ..." combiné avec un mot positif
+    if(/ oui [^.!?]*\s(marche|fonctionne|ok|bon|résolu|resolu)\s/.test(t)) return true;
+    return false;
+  }
+
   function sendChatReply(text){
     CHAT.history.push({role:'user', text:text});
     CHAT.lastReplies=[];
+
+    // Court-circuit : l'employé dit explicitement que c'est résolu → on clôt sans attendre l'IA
+    if(isUserSolved(text)){
+      var idx = CHAT.history.filter(function(m){return m.role==='ai'}).length + 1;
+      CHAT.history.push({
+        role:'ai',
+        text:'Super, content que ça remarche ! Je mémorise ce qui a fonctionné pour la prochaine fois.',
+        idx: idx, hint:'résolu en magasin'
+      });
+      CHAT.waiting=false;
+      renderChat();
+      finalizeChat('solved','Résolu en magasin par l'+AP+'employé après le dépannage guidé.');
+      return;
+    }
+
     CHAT.waiting=true;
     renderChat();
 
